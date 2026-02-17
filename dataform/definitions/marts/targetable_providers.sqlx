@@ -1,0 +1,41 @@
+config {
+  type: "table",
+  schema: "drip_marts",
+  name: "targetable_providers",
+  tags: ["marts", "targeting"]
+}
+
+WITH latest_mix AS (
+  SELECT *
+  FROM ${ref("procedure_mix")}
+  QUALIFY ROW_NUMBER() OVER (
+    PARTITION BY npi, market, state, procedure_group
+    ORDER BY period_start DESC
+  ) = 1
+),
+procedure_summary AS (
+  SELECT
+    npi,
+    market,
+    state,
+    ARRAY_AGG(STRUCT(procedure_group, procedure_share) ORDER BY procedure_share DESC LIMIT 5) AS top_procedure_mix
+  FROM latest_mix
+  GROUP BY 1,2,3
+)
+SELECT
+  p.npi,
+  p.provider_name,
+  p.specialty_rollup,
+  l.state,
+  l.market,
+  COALESCE(i.normalized_score, 0) AS influence_score,
+  ps.top_procedure_mix
+FROM ${ref("providers")} p
+LEFT JOIN ${ref("provider_locations")} l USING (npi)
+LEFT JOIN ${ref("influence_scores")} i
+  ON i.npi = p.npi
+ AND i.market = l.market
+LEFT JOIN procedure_summary ps
+  ON ps.npi = p.npi
+ AND ps.market = l.market
+ AND ps.state = l.state

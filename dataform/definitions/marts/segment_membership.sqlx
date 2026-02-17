@@ -1,0 +1,11 @@
+config {
+  type: "operations",
+  schema: "drip_marts",
+  name: "segment_membership",
+  tags: ["marts", "segments"]
+}
+
+CREATE TABLE IF NOT EXISTS `${dataform.projectConfig.vars.project_id}.drip_marts.segment_membership` (
+  segment_id STRING,
+  npi STRING
+);

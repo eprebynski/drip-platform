@@ -1,0 +1,21 @@
+config {
+  type: "table",
+  schema: "drip_core",
+  name: "utilization_events_medicare",
+  tags: ["core", "utilization", "medicare"],
+  disabled: true
+}
+
+-- Placeholder mapping to support drop-in Medicare onboarding.
+-- To enable later: set `disabled: false`, point to actual drip_raw.medicare_* source,
+-- and union this table into utilization_events.sqlx.
+SELECT
+  'medicare' AS payer_source,
+  CAST(npi AS STRING) AS npi,
+  market,
+  state,
+  DATE_TRUNC(DATE(service_date), MONTH) AS period_start,
+  procedure_group,
+  SUM(CAST(volume AS INT64)) AS volume
+FROM `${dataform.projectConfig.vars.project_id}.drip_raw.medicare_claims`
+GROUP BY 1, 2, 3, 4, 5, 6

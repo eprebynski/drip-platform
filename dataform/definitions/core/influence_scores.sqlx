@@ -1,0 +1,40 @@
+config {
+  type: "table",
+  schema: "drip_core",
+  name: "influence_scores",
+  tags: ["core", "scoring"]
+}
+
+WITH outgoing AS (
+  SELECT from_npi AS npi, market, SUM(referral_count) AS out_referrals
+  FROM ${ref("referral_edges")}
+  GROUP BY 1, 2
+),
+incoming AS (
+  SELECT to_npi AS npi, market, SUM(referral_count) AS in_referrals
+  FROM ${ref("referral_edges")}
+  GROUP BY 1, 2
+),
+combined AS (
+  SELECT
+    COALESCE(i.npi, o.npi) AS npi,
+    COALESCE(i.market, o.market) AS market,
+    COALESCE(i.in_referrals, 0) AS in_referrals,
+    COALESCE(o.out_referrals, 0) AS out_referrals,
+    (COALESCE(i.in_referrals, 0) * 0.7 + COALESCE(o.out_referrals, 0) * 0.3) AS raw_score
+  FROM incoming i
+  FULL OUTER JOIN outgoing o
+    ON i.npi = o.npi
+   AND i.market = o.market
+)
+SELECT
+  npi,
+  market,
+  in_referrals,
+  out_referrals,
+  raw_score,
+  SAFE_DIVIDE(
+    raw_score,
+    MAX(raw_score) OVER (PARTITION BY market)
+  ) AS normalized_score
+FROM combined

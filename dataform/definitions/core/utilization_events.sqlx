@@ -1,0 +1,13 @@
+config {
+  type: "table",
+  schema: "drip_core",
+  name: "utilization_events",
+  tags: ["core", "utilization"]
+}
+
+SELECT * FROM ${ref("utilization_events_medicaid")}
+${when(
+  dataform.projectConfig.vars.enable_medicare === "true",
+  "UNION ALL SELECT * FROM ${ref(\"utilization_events_medicare\")}",
+  ""
+)}
