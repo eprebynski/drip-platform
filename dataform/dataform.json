@@ -1,0 +1,10 @@
+{
+  "defaultSchema": "drip_core",
+  "defaultDatabase": "CHANGE_ME_PROJECT_ID",
+  "assertionSchema": "drip_assertions",
+  "warehouse": "bigquery",
+  "vars": {
+    "project_id": "CHANGE_ME_PROJECT_ID",
+    "enable_medicare": "false"
+  }
+}

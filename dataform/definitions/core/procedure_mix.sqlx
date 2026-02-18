@@ -1,0 +1,42 @@
+config {
+  type: "table",
+  schema: "drip_core",
+  name: "procedure_mix",
+  tags: ["core", "utilization"]
+}
+
+WITH grouped AS (
+  SELECT
+    payer_source,
+    npi,
+    market,
+    state,
+    period_start,
+    procedure_group,
+    SUM(volume) AS procedure_volume
+  FROM ${ref("utilization_events")}
+  GROUP BY 1,2,3,4,5,6
+),
+totals AS (
+  SELECT
+    payer_source,
+    npi,
+    market,
+    state,
+    period_start,
+    SUM(procedure_volume) AS total_volume
+  FROM grouped
+  GROUP BY 1,2,3,4,5
+)
+SELECT
+  g.payer_source,
+  g.npi,
+  g.market,
+  g.state,
+  g.period_start,
+  g.procedure_group,
+  g.procedure_volume,
+  SAFE_DIVIDE(g.procedure_volume, t.total_volume) AS procedure_share
+FROM grouped g
+JOIN totals t
+  USING (payer_source, npi, market, state, period_start)

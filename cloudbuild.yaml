@@ -1,0 +1,55 @@
+substitutions:
+  _REGION: us-east1
+  _REPOSITORY: drip
+  _SERVICE: drip-segment-api
+  _IMAGE: segment-api
+
+steps:
+  - id: Build segment-api image
+    name: gcr.io/cloud-builders/docker
+    args:
+      [
+        "build",
+        "-t",
+        "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE}:$COMMIT_SHA",
+        "services/segment-api",
+      ]
+
+  - id: Push segment-api image
+    name: gcr.io/cloud-builders/docker
+    args:
+      [
+        "push",
+        "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE}:$COMMIT_SHA",
+      ]
+
+  - id: Deploy Cloud Run
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      [
+        "run",
+        "deploy",
+        "${_SERVICE}",
+        "--image",
+        "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE}:$COMMIT_SHA",
+        "--region",
+        "${_REGION}",
+        "--platform",
+        "managed",
+        "--allow-unauthenticated",
+        "--set-env-vars",
+        "GOOGLE_CLOUD_PROJECT=$PROJECT_ID,BQ_MARTS_DATASET=drip_marts",
+      ]
+
+  - id: Dataform placeholder
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: bash
+    args:
+      [
+        "-c",
+        "echo 'Dataform run is environment-specific. See ops/run_dataform.sh and README.'",
+      ]
+
+images:
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE}:$COMMIT_SHA

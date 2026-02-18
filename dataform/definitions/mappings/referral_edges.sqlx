@@ -1,0 +1,15 @@
+config {
+  type: "table",
+  schema: "drip_core",
+  name: "referral_edges",
+  tags: ["core", "referrals"]
+}
+
+SELECT
+  CAST(from_npi AS STRING) AS from_npi,
+  CAST(to_npi AS STRING) AS to_npi,
+  COALESCE(market, "unknown") AS market,
+  DATE(period_start) AS period_start,
+  SUM(CAST(referral_count AS INT64)) AS referral_count
+FROM `${dataform.projectConfig.vars.project_id}.drip_raw.feeder_edges`
+GROUP BY 1, 2, 3, 4

@@ -1,0 +1,30 @@
+config {
+  type: "table",
+  schema: "drip_core",
+  name: "providers",
+  tags: ["core", "nppes"]
+}
+
+WITH nppes AS (
+  SELECT
+    CAST(npi AS STRING) AS npi,
+    provider_name,
+    primary_specialty,
+    taxonomy_code,
+    CASE
+      WHEN primary_specialty IN ("Cardiology", "Interventional Cardiology") THEN "cardiology"
+      WHEN primary_specialty IN ("Orthopedics", "Sports Medicine") THEN "orthopedics"
+      WHEN primary_specialty IS NULL OR primary_specialty = "" THEN "unknown"
+      ELSE LOWER(primary_specialty)
+    END AS specialty_rollup
+  FROM `${dataform.projectConfig.vars.project_id}.drip_raw.nppes_*`
+)
+SELECT
+  npi,
+  ANY_VALUE(provider_name) AS provider_name,
+  ANY_VALUE(primary_specialty) AS primary_specialty,
+  ANY_VALUE(taxonomy_code) AS taxonomy_code,
+  ANY_VALUE(specialty_rollup) AS specialty_rollup
+FROM nppes
+WHERE npi IS NOT NULL
+GROUP BY npi

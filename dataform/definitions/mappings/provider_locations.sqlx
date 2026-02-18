@@ -1,0 +1,15 @@
+config {
+  type: "table",
+  schema: "drip_core",
+  name: "provider_locations",
+  tags: ["core", "nppes"]
+}
+
+SELECT
+  CAST(npi AS STRING) AS npi,
+  address_state AS state,
+  address_city AS city,
+  postal_code,
+  COALESCE(market, address_state) AS market
+FROM `${dataform.projectConfig.vars.project_id}.drip_raw.nppes_*`
+WHERE npi IS NOT NULL

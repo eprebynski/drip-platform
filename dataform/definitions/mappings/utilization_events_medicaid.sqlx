@@ -1,0 +1,17 @@
+config {
+  type: "table",
+  schema: "drip_core",
+  name: "utilization_events_medicaid",
+  tags: ["core", "utilization", "medicaid"]
+}
+
+SELECT
+  'medicaid' AS payer_source,
+  CAST(npi AS STRING) AS npi,
+  COALESCE(market, state) AS market,
+  state,
+  DATE_TRUNC(DATE(service_date), MONTH) AS period_start,
+  COALESCE(procedure_group, service_category, 'unknown') AS procedure_group,
+  SUM(CAST(volume AS INT64)) AS volume
+FROM `${dataform.projectConfig.vars.project_id}.drip_raw.medicaid_claims`
+GROUP BY 1, 2, 3, 4, 5, 6
