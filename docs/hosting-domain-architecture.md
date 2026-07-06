@@ -63,12 +63,27 @@ This is a read-only public observation captured on July 6, 2026. It is not a sub
 
 No DNS changes were made in Phase 2.2.
 
+## Phase 2.3 Manual DNS And Domain Evidence
+
+Phase 2.3 does not change DNS or registrar settings. It defines the private evidence Drip must collect before future staging or production cutover work.
+
+| Evidence needed | Safe collection requirement | Use in future migration |
+| --- | --- | --- |
+| Registrar ownership | Export owner, renewal, lock, MFA/recovery, billing owner, and transfer policy from the registrar without unlocking or transferring the domain. | Confirms who can approve emergency rollback and future DNS migration. |
+| Authoritative DNS zone | Export every A, AAAA, CNAME, MX, TXT, SPF, DKIM, DMARC, verification, and upload-related record with TTLs. | Preserves email, verification, upload, hosting, and rollback records. |
+| Nameserver/SOA source | Confirm the authoritative provider and resolve the public NS/SOA discrepancy noted in Phase 2.2. | Prevents cutover against the wrong DNS control plane. |
+| Staging-domain feasibility | Identify whether staging records can be created later without disturbing production. | Supports future preview work after approval. |
+| Rollback targets | Record current Squarespace hosting targets and any upload/redirect targets needed for reversal. | Allows a future DNS task to restore prior behavior quickly. |
+
+Raw DNS exports should remain in Drip-controlled private storage. Repo docs may contain sanitized summaries and record categories, but exact verification values or private tokens should not be committed unless explicitly approved and safe.
+
 ## DNS Migration Guardrails
 
 No DNS change should happen without:
 
 - Current registrar and nameserver inventory.
 - Full DNS record export, including mail and verification records.
+- Phase 2.3 sanitized evidence review.
 - TTL reduction plan.
 - Staging validation.
 - Rollback target and owner.
@@ -118,4 +133,15 @@ Keep the previous Squarespace site or previous hosting target available until ac
 - No Apps Script edits or trigger changes.
 - No deploys or production resources.
 - No live credentials.
+- No Phase 3 dataset ingestion.
+
+## Non-Goals For Phase 2.3
+
+- No DNS updates.
+- No registrar updates.
+- No Squarespace updates.
+- No website/page/form/redirect edits.
+- No Apps Script edits or trigger changes.
+- No deploys or production resources.
+- No live credentials or private tokens committed.
 - No Phase 3 dataset ingestion.
