@@ -1,0 +1,21 @@
+{
+  "name": "@drip/shared",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Non-production shared contracts for the Drip Healthcare rebuild.",
+  "main": "./src/index.js",
+  "types": "./src/types/index.d.ts",
+  "exports": {
+    ".": "./src/index.js",
+    "./status": "./src/status/index.js",
+    "./schemas": "./src/schemas/index.js",
+    "./contracts": "./src/contracts/index.js"
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
