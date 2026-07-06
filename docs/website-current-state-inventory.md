@@ -4,9 +4,21 @@
 
 Phase 2.2 is a read-only inventory for planning the Drip Healthcare migration away from Squarespace. No Squarespace admin access, DNS console access, Apps Script editor access, Google Sheets access, deploy access, or live credentials were used.
 
+Phase 2.3 adds the manual export collection plan in `docs/manual-export-collection-plan.md`. It does not collect private evidence directly; it defines how Drip should safely export, redact, store, and review the private-source evidence needed to resolve the `UNKNOWN` fields below.
+
 The inventory was collected on July 6, 2026 from public `GET` requests, the public sitemap and robots files, public DNS lookups, public RDAP data, and public page source. Fields that require private Squarespace, DNS, Apps Script, Sheets, analytics, commerce, or registrar access are marked `UNKNOWN`.
 
 No production systems were changed.
+
+## Phase 2.3 Evidence Intake Boundary
+
+| Boundary | Requirement |
+| --- | --- |
+| Private exports | Raw private exports stay outside the repo unless sanitized and approved for documentation. |
+| Sensitive data | Secrets, private tokens, customer/order/payment data, and personal data are redacted before Codex consumption. |
+| Unknown fields | Any field not verified by private evidence remains `UNKNOWN`; assumptions are not promoted to facts. |
+| Production systems | No DNS, Squarespace, Apps Script, Sheets, Firestore, BigQuery, Stripe, ScreenCloud, deploy, or production-resource change is authorized. |
+| Phase 3 | Dataset ingestion remains blocked until Drip/ChatGPT review of the sanitized evidence package. |
 
 ## Evidence Sources
 
@@ -212,6 +224,8 @@ The active public Apps Script web-app URL appears in page source. This document 
 
 ## Manual Information Needed From Drip
 
+Detailed collection steps, safe file formats, redaction rules, storage guidance, and retirement/Phase 3 blockers are defined in `docs/manual-export-collection-plan.md`.
+
 | Needed item | How to collect safely |
 | --- | --- |
 | Squarespace pages export | Export page list, URLs, titles, navigation, disabled pages, SEO settings, and page settings without editing content. |
@@ -228,6 +242,8 @@ The active public Apps Script web-app URL appears in page source. This document 
 | Route traffic | Export Search Console/analytics top routes and query params for at least the last 90 days. |
 
 ## Safe Manual Collection Steps
+
+Use `docs/manual-export-collection-plan.md` as the controlling Phase 2.3 checklist before collecting or sharing any private-source evidence.
 
 1. Create a read-only export folder outside production runtime systems.
 2. Export Squarespace pages, navigation, forms, redirects, assets, commerce settings, and code injection without editing or publishing.
@@ -252,3 +268,5 @@ The active public Apps Script web-app URL appears in page source. This document 
 | Upload service backend/storage owner | `UNKNOWN` and required. |
 | Production cutover approval | Not requested; blocked. |
 | Phase 3 dataset ingestion | Blocked until ChatGPT/Drip review. |
+
+Each `UNKNOWN` blocker above has a matching Phase 2.3 export step in `docs/manual-export-collection-plan.md`.
