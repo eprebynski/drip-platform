@@ -46,6 +46,23 @@ Firebase Hosting plus Cloud Run rewrites is the recommended default because it i
 | Website hosting | Drip GitHub/GCP stack | Squarespace until replacement pages pass staging. |
 | App/API hosting | Drip GitHub/GCP stack | No Squarespace role. |
 
+## Phase 2.2 Public DNS Inventory
+
+This is a read-only public observation captured on July 6, 2026. It is not a substitute for an authoritative DNS zone export.
+
+| Dependency | Public observation | Cutover guardrail |
+| --- | --- | --- |
+| Registrar | RDAP lists Squarespace Domains LLC. | Drip must confirm registrar account owner, renewal, MFA, and recovery details. |
+| Apex host | `driphealthcare.com` resolves to four Squarespace A records. | Do not change until replacement public site and rollback are approved. |
+| `www` host | `www.driphealthcare.com` CNAMEs to `ext-sq.squarespace.com`. | Do not change until replacement public site and rollback are approved. |
+| Nameservers | Public NS results include NSOne and Squarespace DNS nameservers. | Export authoritative zone and confirm DNS host before cutover. |
+| SOA | Public SOA differs by NSOne pool from the observed NS list. | Treat as an export-required discrepancy, not a decision point. |
+| Email | Google Workspace MX records are present. | Preserve mail records exactly during any DNS migration. |
+| Verification | Google verification TXT records are present. | Preserve exact values from DNS export; values are not repeated in repo docs. |
+| Upload host | `upload.driphealthcare.com` resolves publicly and is used by the conference campaign submit page. | Inventory backend owner, storage, auth, and rollback before replacing. |
+
+No DNS changes were made in Phase 2.2.
+
 ## DNS Migration Guardrails
 
 No DNS change should happen without:
@@ -92,3 +109,13 @@ Keep the previous Squarespace site or previous hosting target available until ac
 - No live credentials.
 - No Phase 3 dataset ingestion.
 - No production app/API activation.
+
+## Non-Goals For Phase 2.2
+
+- No DNS updates.
+- No Squarespace updates.
+- No website/page/form/redirect edits.
+- No Apps Script edits or trigger changes.
+- No deploys or production resources.
+- No live credentials.
+- No Phase 3 dataset ingestion.

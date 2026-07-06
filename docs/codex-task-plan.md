@@ -62,6 +62,19 @@ Codex should produce reviewable, dashboard-readable rebuild work packets. No pro
 | Production impact | None. No deploys, DNS, Squarespace, Apps Script, Sheets, Firestore, BigQuery, Stripe, ScreenCloud, production-resource, or live credential changes. |
 | Phase 3 status | Still blocked until ChatGPT/Drip review. |
 
+## Phase 2.2 Website Current-State Inventory Status
+
+| Item | Status |
+| --- | --- |
+| Branch name requested | `rebuild/phase-2-2-website-inventory`. |
+| Inventory doc | Added `docs/website-current-state-inventory.md`. |
+| Evidence boundary | Public website, sitemap, robots, DNS, RDAP, and page source only; private exports remain `UNKNOWN`. |
+| Key finding | Several public Squarespace pages call a live Apps Script web app for media center, display preference, digital signage, conference invoice, campaign submit/edit/archive/order, showcase, and QR redirect flows. |
+| DNS finding | Public DNS points apex and `www` to Squarespace, with Google Workspace MX records and Google verification TXT records that must be preserved. |
+| Commerce/upload finding | `/store`, `/cart`, and `upload.driphealthcare.com/upload` are live dependencies requiring export/owner review. |
+| Production impact | None. No deploys, DNS, Squarespace, website/page/form/redirect edits, Apps Script, Sheets, Firestore, BigQuery, Stripe, ScreenCloud, production-resource, or live credential changes. |
+| Phase 3 status | Still blocked until ChatGPT/Drip review. |
+
 ## Task Packet Standard
 
 Every Codex task should include:
@@ -90,6 +103,7 @@ Every Codex task should include:
 | 1 | Draft Firestore schemas, service contracts, feature flag defaults, jobRun schema, test plan. |
 | 2 | Build Admin Dashboard MVP and Codex Review Queue. |
 | 2.1 | Document website platform simplification and Squarespace retirement plan. |
+| 2.2 | Inventory current Squarespace website, forms, scripts, redirects, assets, SEO, analytics, DNS, and migration risks in read-only mode. |
 | 3 | Implement dataset upload, validation, staging load, recommendation refresh skeleton. |
 | 4 | Implement daily automation jobs in dry-run/shadow mode. |
 | 5 | Implement DisplayProviderService and ScreenCloudAdapter dry-run. |
@@ -151,6 +165,22 @@ Tests or validation: Documentation review, git diff check, secret-pattern scan, 
 Approvals needed: Drip/ChatGPT review of Squarespace retirement plan before any DNS, hosting, Squarespace, or production-resource work. Phase 3 dataset ingestion remains blocked.
 Open questions: Who controls registrar/DNS today, which Squarespace forms feed live Sheets or Apps Script flows, and which current pages require SEO-preserving redirects?
 Recommended next Codex prompt: Review Phase 2.1 docs, then inventory current Squarespace pages/forms/scripts/DNS records in read-only mode; do not change DNS, Squarespace, deploys, credentials, or production systems, and keep Phase 3 blocked until Drip/ChatGPT approval.
+```
+
+## Phase 2.2 Codex Review Queue Item
+
+```text
+Codex Review Queue Item
+Phase: Phase 2.2
+Title: Read-Only Squarespace Website Inventory
+Summary: Documentation-only current-state inventory of public Drip Healthcare Squarespace pages, forms, scripts, redirects, assets, SEO/analytics, DNS/registrar observations, operational dependencies, rebuild/retain/retire decisions, cutover risks, and manual export steps. Private Squarespace/DNS/Apps Script/Sheets/analytics/commerce fields are marked UNKNOWN where read-only public evidence is insufficient.
+Files changed: docs/website-current-state-inventory.md, docs/website-platform-simplification-plan.md, docs/hosting-domain-architecture.md, docs/risk-register.md, docs/acceptance-tests.md, docs/codex-task-plan.md
+Risk level: MEDIUM
+Production impact: None. No deploys, DNS changes, Squarespace changes, website/page/form/redirect edits, Apps Script, Sheets, Firestore, BigQuery, Stripe, ScreenCloud, production-resource, or live credential changes.
+Tests or validation: Read-only public website/sitemap/robots/DNS/RDAP checks, documentation review, local package tests where available, and secret-pattern scan.
+Approvals needed: Drip/ChatGPT review before any Squarespace, DNS, hosting, Apps Script, redirect, upload, commerce, analytics, or production-resource changes. Phase 3 dataset ingestion remains blocked.
+Open questions: Who owns Squarespace/registrar/DNS/analytics/upload/commerce today, where each form writes, which Apps Script deployment/source is live, and which custom routes have current traffic.
+Recommended next Codex prompt: Review Phase 2.2 inventory with Drip and ChatGPT; collect read-only Squarespace admin exports, DNS zone export, Apps Script deployment/source, form destinations, upload-service ownership, commerce settings, and analytics/Search Console reports; do not change production systems or start Phase 3.
 ```
 
 ## Approval Policy
