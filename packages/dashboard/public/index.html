@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Drip Admin Dashboard</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Phase 2 Local MVP</p>
+          <h1>Drip Admin Dashboard</h1>
+        </div>
+        <div class="topbar-metrics" aria-label="Dashboard status">
+          <span id="modePill" class="pill local">LOCAL_ONLY</span>
+          <span id="featureFlagPill" class="pill neutral">Flags loading</span>
+          <span id="credentialPill" class="pill neutral">Credentials loading</span>
+        </div>
+      </header>
+
+      <div class="workspace">
+        <nav class="sidebar" aria-label="Dashboard modules" id="moduleNav"></nav>
+        <main class="content" id="content" tabindex="-1"></main>
+      </div>
+    </div>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

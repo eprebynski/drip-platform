@@ -1,0 +1,15 @@
+{
+  "name": "@drip/admin-dashboard-local",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Local-only Drip Admin Dashboard MVP for Phase 2.",
+  "main": "./src/server.js",
+  "scripts": {
+    "start": "node ./src/server.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
