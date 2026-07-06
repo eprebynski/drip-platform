@@ -2,6 +2,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {
+  TEXT_SNIFF_EXTENSIONS,
   ensurePrivateEvidenceFolders,
   parseArgs,
   printHelp,
@@ -40,21 +41,7 @@ const SENSITIVE_PATTERNS = [
   { name: 'Signed URL', regex: /https?:\/\/[^\s"'<>]+(?:X-Goog-Signature|X-Amz-Signature|Signature=|sig=|token=)[^\s"'<>]*/gi, replacement: '[REDACTED_SIGNED_URL]' }
 ];
 
-const TEXT_EXTENSIONS = new Set([
-  '.csv',
-  '.json',
-  '.jsonl',
-  '.log',
-  '.md',
-  '.txt',
-  '.tsv',
-  '.xml',
-  '.yaml',
-  '.yml',
-  '.html',
-  '.js',
-  '.css'
-]);
+const TEXT_EXTENSIONS = new Set(TEXT_SNIFF_EXTENSIONS);
 
 function isTextFile(filePath) {
   const extension = path.extname(filePath).toLowerCase();

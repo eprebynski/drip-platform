@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 export const DEFAULT_PRIVATE_EVIDENCE_DIR = '~/Documents/Drip/private-evidence';
 
 export const REQUIRED_FOLDERS = [
+  'inbox',
   'squarespace',
   'dns-registrar',
   'apps-script',
@@ -17,7 +18,37 @@ export const REQUIRED_FOLDERS = [
   'active-routes',
   'sanitized-summaries',
   'redaction-reports',
-  'manifests'
+  'manifests',
+  'review-needed'
+];
+
+export const EVIDENCE_DESTINATION_FOLDERS = [
+  'squarespace',
+  'dns-registrar',
+  'apps-script',
+  'sheets',
+  'analytics-search-console',
+  'commerce',
+  'upload-service',
+  'screencloud',
+  'active-routes'
+];
+
+export const TEXT_SNIFF_EXTENSIONS = [
+  '.csv',
+  '.json',
+  '.jsonl',
+  '.log',
+  '.md',
+  '.txt',
+  '.tsv',
+  '.xml',
+  '.yaml',
+  '.yml',
+  '.html',
+  '.htm',
+  '.js',
+  '.css'
 ];
 
 export const EVIDENCE_CATEGORIES = [
@@ -40,6 +71,7 @@ export const EVIDENCE_CATEGORIES = [
 ];
 
 const FOLDER_PURPOSES = {
+  'inbox': 'Drop downloaded exports, screenshots, PDFs, CSVs, TXT files, markdown files, JSON files, and notes here before local import.',
   'squarespace': 'Read-only Squarespace page, form, code injection, redirect, asset, and related export evidence.',
   'dns-registrar': 'Registrar ownership evidence and DNS zone exports with exact values stored privately.',
   'apps-script': 'Read-only Apps Script deployment, source/version, mode, trigger, and route mapping evidence.',
@@ -51,7 +83,8 @@ const FOLDER_PURPOSES = {
   'active-routes': 'Active QR, campaign, conference, provider, advertiser, and showcase route evidence.',
   'sanitized-summaries': 'Blank and reviewed sanitized summaries that may later inform repo docs after redaction review.',
   'redaction-reports': 'Non-destructive scanner reports and optional safe redacted copies generated from private evidence.',
-  'manifests': 'Evidence manifests, redaction checklists, owner maps, and export-tracking templates.'
+  'manifests': 'Evidence manifests, redaction checklists, owner maps, import manifests, status reports, and export-tracking templates.',
+  'review-needed': 'Files that the inbox importer could not classify confidently enough for a destination evidence folder.'
 };
 
 export function getRepoRoot() {
@@ -86,6 +119,13 @@ export function parseArgs(argv = process.argv.slice(2)) {
       options.force = true;
     } else if (arg === '--safe-redact') {
       options.safeRedact = true;
+    } else if (arg === '--move') {
+      options.move = true;
+    } else if (arg === '--folder') {
+      options.folder = argv[index + 1];
+      index += 1;
+    } else if (arg.startsWith('--folder=')) {
+      options.folder = arg.slice('--folder='.length);
     } else if (arg === '--help' || arg === '-h') {
       options.help = true;
     }
@@ -146,5 +186,5 @@ export function redactionChecklist() {
 }
 
 export function printHelp(commandName) {
-  console.log(`${commandName}\n\nOptions:\n  --root <path>       Private evidence root. Default: ${DEFAULT_PRIVATE_EVIDENCE_DIR}\n  --force             Overwrite generated templates/readmes.\n  --safe-redact       Scanner only: write redacted copies under redaction-reports/redacted-copies.\n`);
+  console.log(`${commandName}\n\nOptions:\n  --root <path>       Private evidence root. Default: ${DEFAULT_PRIVATE_EVIDENCE_DIR}\n  --force             Overwrite generated templates/readmes.\n  --move              Importer only: remove inbox original after a successful copy.\n  --folder <name>     Folder opener only: open a specific private evidence subfolder.\n  --safe-redact       Scanner only: write redacted copies under redaction-reports/redacted-copies.\n`);
 }
