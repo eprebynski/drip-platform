@@ -113,6 +113,19 @@ Codex should produce reviewable, dashboard-readable rebuild work packets. No pro
 | Production impact | None. No deploys, DNS, Squarespace, website/page/form/redirect edits, Apps Script, triggers, Sheets, Firestore, BigQuery, Stripe, ScreenCloud, production-resource, live credentials, private API calls, or Phase 3 dataset ingestion. |
 | Phase 3 status | Still blocked until Drip/ChatGPT review. |
 
+## Phase 2.6 Public Evidence Auto-Collector Status
+
+| Item | Status |
+| --- | --- |
+| Branch name requested | `rebuild/phase-2-6-public-evidence-auto-collector`. |
+| Local public collector | Added `scripts/collect-public-website-evidence.js` to collect public/read-only website, DNS, and RDAP evidence. |
+| Private inbox output | Collector writes timestamped files only under `~/Documents/Drip/private-evidence/inbox`. |
+| Website evidence | Homepage, robots, sitemap, sitemap pages, HTML snapshots, page/routes/forms/scripts/external links/assets/SEO metadata/reference inventories, and active route candidates. |
+| DNS/domain evidence | Public A, AAAA, CNAME, MX, TXT, SPF, DMARC, NS, SOA, CAA lookups and optional public RDAP summary. |
+| Safety posture | GET-only public collection, no credentials, no cookies, no private APIs, no form submissions, no Apps Script mode calls, no admin access, no production writes. |
+| Production impact | None. No deploys, DNS, Squarespace, website/page/form/redirect edits, Apps Script, triggers, Sheets, Firestore, BigQuery, Stripe, ScreenCloud, production-resource, live credentials, private API calls, authenticated access, or Phase 3 dataset ingestion. |
+| Phase 3 status | Still blocked until Drip/ChatGPT review. |
+
 ## Task Packet Standard
 
 Every Codex task should include:
@@ -145,6 +158,7 @@ Every Codex task should include:
 | 2.3 | Plan manual private-source exports, redaction, evidence storage, and review steps for resolving website migration `UNKNOWN` fields. |
 | 2.4 | Add local-only private evidence automation for folders, templates, manifests, redaction reports, and sanitized summary stubs. |
 | 2.5 | Add local-only private evidence inbox import, auto-classification, review-needed routing, import manifests, and status reports. |
+| 2.6 | Add local-only public evidence auto-collection for website pages, route candidates, public dependencies, DNS, RDAP, and inbox prefill. |
 | 3 | Implement dataset upload, validation, staging load, recommendation refresh skeleton. |
 | 4 | Implement daily automation jobs in dry-run/shadow mode. |
 | 5 | Implement DisplayProviderService and ScreenCloudAdapter dry-run. |
@@ -270,6 +284,22 @@ Tests or validation: Local importer/status/folder/template/scanner smoke checks,
 Approvals needed: Drip/ChatGPT review before trusting classifications for migration decisions, converting private evidence into repo docs, or starting Phase 3.
 Open questions: Which private evidence folder location Drip prefers long term, who reviews `review-needed/`, and which sanitized summaries can be promoted into repo documentation after redaction review.
 Recommended next Codex prompt: Review Phase 2.5 with Drip and ChatGPT; use `npm run evidence:open-inbox`, place private exports into the inbox, run `npm run evidence:import`, run `npm run evidence:scan`, review `review-needed/` and redaction reports, fill sanitized summaries only, keep UNKNOWN fields until verified, and do not start Phase 3 or change production systems.
+```
+
+## Phase 2.6 Codex Review Queue Item
+
+```text
+Codex Review Queue Item
+Phase: Phase 2.6
+Title: Public Evidence Auto-Collector
+Summary: Local-only public evidence collector that writes timestamped website, route, form, script, asset, SEO, dependency reference, DNS, and optional RDAP evidence into the private evidence inbox for later import/scan/status review.
+Files changed: package.json, scripts/private-evidence-kit-common.js, scripts/collect-public-website-evidence.js, docs/private-evidence-automation-kit.md, docs/manual-export-collection-plan.md, docs/acceptance-tests.md, docs/risk-register.md, docs/codex-task-plan.md
+Risk level: MEDIUM
+Production impact: None. No deploys, DNS changes, Squarespace changes, website/page/form/redirect edits, Apps Script changes, trigger changes, live Sheets/Firestore/BigQuery/Stripe/ScreenCloud writes, production resources, live credentials, private API calls, authenticated access, browser cookies, or Phase 3 dataset ingestion.
+Tests or validation: Syntax check, dry-run collector check, repo-root guard check, local mock website smoke check, inbox import/scan/status workflow check, existing package tests where available, secret-pattern scan, .DS_Store scan, and PR scope verification.
+Approvals needed: Drip/ChatGPT review before trusting public collector output for migration decisions, before promoting sanitized findings into repo docs, before any Squarespace/DNS/hosting/App Script/app/API changes, and before Phase 3.
+Open questions: Which private exports will reconcile public observations, which active routes have current traffic, who reviews collector outputs in `review-needed/`, and whether any public dependency is temporary or must be rebuilt.
+Recommended next Codex prompt: Review Phase 2.6 with Drip and ChatGPT; run `npm run evidence:collect-public`, then `npm run evidence:import`, `npm run evidence:scan`, and `npm run evidence:status`; compare public observations with private Squarespace, DNS, Apps Script, Sheets, analytics, commerce, upload, ScreenCloud, and active route exports; keep UNKNOWN fields until verified; do not start Phase 3 or change production systems.
 ```
 
 ## Approval Policy

@@ -9,6 +9,8 @@
     "evidence:open-inbox": "node ./scripts/open-private-evidence-folder.js --folder inbox",
     "evidence:create-folders": "node ./scripts/create-private-evidence-folders.js",
     "evidence:create-templates": "node ./scripts/generate-private-evidence-templates.js",
+    "evidence:collect-public": "node ./scripts/collect-public-website-evidence.js",
+    "evidence:collect-public:dry-run": "node ./scripts/collect-public-website-evidence.js --dry-run",
     "evidence:import": "node ./scripts/import-private-evidence-inbox.js",
     "evidence:status": "node ./scripts/generate-private-evidence-status-report.js",
     "evidence:scan": "node ./scripts/scan-private-evidence-for-secrets.js",
