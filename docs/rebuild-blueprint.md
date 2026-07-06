@@ -27,6 +27,7 @@ Phase 1.5 local service skeleton package added locally: `packages/services`. It 
 | Human review by exception | Daily operations should run automatically and create review tasks only when necessary. |
 | Reversible migration | Each phase needs rollback notes, feature flags, and acceptance tests. |
 | Enterprise readiness | RBAC, least privilege, audit logs, backup policy, incident process, and restore tests are first-class requirements. |
+| Platform consolidation | Public website, app pages, dashboards, redirects, and APIs should move into the GitHub/GCP stack; Squarespace remains temporary only during migration. |
 
 ## Target Architecture
 
@@ -38,11 +39,31 @@ Phase 1.5 local service skeleton package added locally: `packages/services`. It 
 | Cloud Scheduler | Daily automation, backups, refresh jobs, pacing checks, health checks. |
 | Cloud Storage | Dataset uploads, backup artifacts, exports, rendered creative assets, versioned snapshots. |
 | Secret Manager | API keys, external provider tokens, Stripe secrets, ScreenCloud credentials. |
+| Firebase Hosting or GCP static hosting | Public marketing pages, staged previews, app shell assets, and showcase pages. |
 | Google Sheets | Raw Squarespace intake, admin review bridge, migration bridge, read-only legacy history. |
 | Apps Script | Temporary bridge only; shrink after migration. |
 | Drip Admin Dashboard | Human review, safety review, data uploads, job monitoring, feature flags, change requests, backups, Codex Review Queue. |
 | Advertiser Dashboard | Campaign submission, market recommendations, reporting, budget/billing visibility. |
 | Media Center | Provider profile, display preferences, provider-facing campaigns, display approval controls. |
+
+## Website And Domain Target
+
+Squarespace is not part of the long-term Drip application platform. It can remain temporarily for current public pages, forms, domain registration, or DNS management while replacement pages and routes are rebuilt, staged, reviewed, and cut over. It should not host admin tools, authenticated dashboards, campaign billing workflows, internal review queues, app routes, redirect APIs, or production operations.
+
+Recommended long-term surfaces:
+
+| Surface | Target role |
+| --- | --- |
+| `driphealthcare.com` and `www.driphealthcare.com` | Repo-controlled public marketing website. |
+| `admin.driphealthcare.com` | Authenticated Drip Admin Dashboard. |
+| `app.driphealthcare.com` | Shared authenticated app shell. |
+| `app.driphealthcare.com/advertisers` or `advertisers.driphealthcare.com` | Advertiser Dashboard. |
+| `app.driphealthcare.com/media-center` or `media.driphealthcare.com` | Provider Media Center. |
+| `api.driphealthcare.com` | API layer. |
+| `go.driphealthcare.com` | Campaign and QR redirect service. |
+| `showcase.driphealthcare.com` | Conference showcase pages. |
+
+The recommended simple hosting pattern is Firebase Hosting for public/static frontends with Cloud Run for API and dynamic service boundaries. Cloud Run behind an HTTPS load balancer remains the fallback if one advanced routing layer becomes necessary. See `docs/website-platform-simplification-plan.md` and `docs/hosting-domain-architecture.md`.
 
 ## Campaign Model
 
@@ -65,6 +86,7 @@ Activation rule: a campaign can become ACTIVE only when safetyStatus is APPROVED
 | 0 | Non-destructive audit and blueprint | Document architecture, risks, and migration plan. | Documentation only. |
 | 1 | Foundation schemas and service skeletons | Create Firestore schemas, job logs, feature flags, rebuild tracking collections, service contracts. | No production writes except approved infrastructure setup in future implementation. |
 | 2 | Admin Dashboard MVP | Build control center with Codex Review Queue and human review queues. | Staging first, approval-gated prod. |
+| 2.1 | Website platform simplification | Document Squarespace retirement, domain architecture, staging, rollback, and cutover plan. | Documentation only; no DNS, Squarespace, deploy, or production-resource changes. |
 | 3 | Dataset ingestion and market intelligence | Upload, validate, load, and refresh datasets. | Dry-run and approval for production loads. |
 | 4 | Daily self-sufficient automation | Automate intake, safety, activation, expiration, pacing, summaries, alerts. | Feature-flagged and review-gated. |
 | 5 | Display provider abstraction | Build DisplayProviderService and ScreenCloudAdapter. | Dry-run first, external writes approval-gated. |

@@ -23,6 +23,8 @@
 | R17 | Phase 1 contracts could be mistaken for production-ready implementation. | Medium | Medium | Reviewers may assume schemas/stubs resolve live parity or approval-owner blockers. | Keep blockers explicit; require production-readiness review before implementation or deploy. | Drip Super Admin |
 | R18 | Phase 1.5 local skeletons could be mistaken for deployable services. | Medium | Medium | Mock handlers could be promoted before live IAM, source parity, approval owners, and secrets are ready. | Keep package local-only; require production implementation review and new approval before deployment work. | Engineering |
 | R19 | Phase 2 dashboard status changes could be mistaken for production approvals. | Medium | Medium | Local review state could be interpreted as authorization to connect live services or cut over legacy systems. | Label dashboard as local-only, keep status changes in memory, and require separate rebuildApprovals before production-connected work. | Drip Super Admin |
+| R20 | Squarespace remains a hidden operational dependency after app/API rebuild. | High | Medium | Public pages, forms, embeds, redirects, or scripts could keep production workflows outside GitHub/GCP control. | Inventory all Squarespace pages/forms/scripts/redirects and cut over only after replacements, staging, and rollback pass. | Engineering/Product |
+| R21 | DNS or website cutover breaks public website, forms, email records, redirects, or SEO. | High | Medium | Lead intake, campaign pages, email verification, and indexed traffic could fail. | Require DNS export, TTL plan, staging validation, rollback target, monitoring, and separate production approval before any DNS change. | Engineering/Operations |
 
 ## Risky Production Items
 
@@ -39,8 +41,9 @@
 | Contract package changes | Can influence future implementation assumptions. | ChatGPT/Drip review before production coding. |
 | Local service skeletons | Can influence future service boundaries. | ChatGPT/Drip review before production-connected coding. |
 | Local dashboard review state | Can influence human workflow assumptions. | In-memory only; not a production approval source. |
+| Squarespace/DNS changes | Can affect public website availability, forms, redirects, SEO, and email/verification records. | Separate hosting cutover approval; no changes in Phase 2.1. |
 | Legacy code deletion | Can break hidden dependencies. | Zero dependency proof and explicit approval. |
 
 ## Open Risks Due To Evidence Gap
 
-The aggregate and repo ZIP resolved many earlier planning unknowns. Remaining unmeasured risks are direct deployed Apps Script source parity, Apps Script runtime source order, live traffic volume by route, live trigger health beyond the aggregate snapshot, current secret values/rotation status, live BigQuery table location/row freshness, Cloud Run IAM/deployed image parity, and full branch/uncommitted repo state.
+The aggregate and repo ZIP resolved many earlier planning unknowns. Remaining unmeasured risks are direct deployed Apps Script source parity, Apps Script runtime source order, live traffic volume by route, live trigger health beyond the aggregate snapshot, current secret values/rotation status, live BigQuery table location/row freshness, Cloud Run IAM/deployed image parity, full branch/uncommitted repo state, Squarespace page/form/script inventory, registrar/DNS ownership, and current DNS record dependencies.

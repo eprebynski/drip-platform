@@ -50,6 +50,18 @@ Codex should produce reviewable, dashboard-readable rebuild work packets. No pro
 | Production impact | None. No deploys, live credentials, Apps Script, Sheets, Firestore, BigQuery, Stripe, ScreenCloud, display-provider, campaign-state, or production-resource writes. |
 | Local tests | Added under `packages/dashboard/test`. |
 
+## Phase 2.1 Website Platform Simplification Status
+
+| Item | Status |
+| --- | --- |
+| Branch name requested | `rebuild/phase-2-1-website-platform-simplification`. |
+| Squarespace recommendation | Retire Squarespace as a required website/application platform after safe migration. |
+| Temporary Squarespace role | Keep temporarily for current public pages/forms and, if applicable, domain registration/DNS until replacements pass staging and cutover approval. |
+| Hosting/domain docs | Added `docs/website-platform-simplification-plan.md` and `docs/hosting-domain-architecture.md`. |
+| Recommended hosting | Firebase Hosting or equivalent GCP-first static hosting for public/static frontends, with Cloud Run APIs. |
+| Production impact | None. No deploys, DNS, Squarespace, Apps Script, Sheets, Firestore, BigQuery, Stripe, ScreenCloud, production-resource, or live credential changes. |
+| Phase 3 status | Still blocked until ChatGPT/Drip review. |
+
 ## Task Packet Standard
 
 Every Codex task should include:
@@ -77,6 +89,7 @@ Every Codex task should include:
 | 0 | Complete docs, identify evidence gaps, create review packet. |
 | 1 | Draft Firestore schemas, service contracts, feature flag defaults, jobRun schema, test plan. |
 | 2 | Build Admin Dashboard MVP and Codex Review Queue. |
+| 2.1 | Document website platform simplification and Squarespace retirement plan. |
 | 3 | Implement dataset upload, validation, staging load, recommendation refresh skeleton. |
 | 4 | Implement daily automation jobs in dry-run/shadow mode. |
 | 5 | Implement DisplayProviderService and ScreenCloudAdapter dry-run. |
@@ -122,6 +135,22 @@ Tests or validation: Dashboard tests, shared/service tests, local app smoke chec
 Approvals needed: Drip review and ChatGPT review before Phase 3. Production approvals remain blocked by unresolved legacy/parity items.
 Open questions: Who owns approval decisions, and which deployed Apps Script/routes remain live?
 Recommended next Codex prompt: After Phase 2 review, implement Phase 3 dataset ingestion and market intelligence staging using local mocks first; keep production writes blocked.
+```
+
+## Phase 2.1 Codex Review Queue Item
+
+```text
+Codex Review Queue Item
+Phase: Phase 2.1
+Title: Website Platform Simplification and Squarespace Retirement Plan
+Summary: Documentation-only plan to retire Squarespace as a required website/application platform after safe migration, consolidate public website/app/API/redirect/showcase hosting into the Drip GitHub/GCP stack, and keep Squarespace temporary for public pages/forms/domain management until replacement pages, staging, DNS guardrails, and rollback are approved.
+Files changed: docs/website-platform-simplification-plan.md, docs/hosting-domain-architecture.md, docs/rebuild-blueprint.md, docs/service-architecture.md, docs/admin-dashboard-spec.md, docs/risk-register.md, docs/acceptance-tests.md, docs/codex-task-plan.md
+Risk level: MEDIUM
+Production impact: None. No deploys, DNS changes, Squarespace changes, Apps Script, Sheets, Firestore, BigQuery, Stripe, ScreenCloud, production-resource, or live credential changes.
+Tests or validation: Documentation review, git diff check, secret-pattern scan, and PR scope verification.
+Approvals needed: Drip/ChatGPT review of Squarespace retirement plan before any DNS, hosting, Squarespace, or production-resource work. Phase 3 dataset ingestion remains blocked.
+Open questions: Who controls registrar/DNS today, which Squarespace forms feed live Sheets or Apps Script flows, and which current pages require SEO-preserving redirects?
+Recommended next Codex prompt: Review Phase 2.1 docs, then inventory current Squarespace pages/forms/scripts/DNS records in read-only mode; do not change DNS, Squarespace, deploys, credentials, or production systems, and keep Phase 3 blocked until Drip/ChatGPT approval.
 ```
 
 ## Approval Policy

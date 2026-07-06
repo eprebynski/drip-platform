@@ -16,6 +16,7 @@ The Drip Admin Dashboard is the rebuild control center and future operations con
 | Secret/config migration | Show outstanding Script Properties/env/code constants that must move to Secret Manager. |
 | Market intelligence source parity | Show repo ZIP evidence, live BigQuery table map, Dataform run status, and Segment API IAM/deploy status. |
 | Public API exposure | Show any public unauthenticated route that can write data, including `POST /segments/create` if deployed as shown. |
+| Website/domain migration | Show Squarespace retirement status, page/form inventory progress, DNS cutover readiness, staging validation, and rollback ownership before any production hosting change. |
 
 ## Phase 1 Data Contracts By Module
 
@@ -34,6 +35,7 @@ The Drip Admin Dashboard is the rebuild control center and future operations con
 | Backup & Restore | `backups`, `rollbackNotes`, `rebuildApprovals`. |
 | Legacy Migration | `changeRequests`, `auditLogs`, `codexTasks`, `codexReviewItems`. |
 | Codex Review Queue / Rebuild Control Center | `codexTasks`, `codexReviewItems`, `codexArtifacts`, `codexPromptHistory`, `rebuildApprovals`. |
+| Website Platform Migration | `websitePages`, `websiteForms`, `domainRecords`, `migrationTasks`, `humanReviewTasks`, `rollbackNotes`. |
 
 ## Phase 1.5 Local Handler Visibility
 
@@ -49,6 +51,7 @@ The Drip Admin Dashboard is the rebuild control center and future operations con
 | Display Placements | `display-service` | Show dry-run-only adapter output and blocked write attempts. |
 | Billing Review | `billing-service` | Show preview totals and readiness errors without Stripe. |
 | Backup & Restore | `backup-service` | Show backup target validation and restore-test request drafts. |
+| Website Platform Migration | local planning docs | Future module should show Squarespace inventory, staging status, DNS readiness, cutover checklist, and rollback notes. |
 
 ## Modules
 
@@ -68,6 +71,7 @@ The Drip Admin Dashboard is the rebuild control center and future operations con
 | Legacy Migration | Track legacy dependencies and retirement readiness. | migrationTasks, auditLogs |
 | Change Requests | Review proposed production changes and rollback plans. | changeRequests |
 | Codex Review Queue | Human/ChatGPT review handoff for Codex-generated work. | codexTasks, codexReviewItems, codexArtifacts, codexPromptHistory |
+| Website Platform Migration | Track Squarespace retirement, page/form inventory, staging, DNS readiness, and rollback plan. | websitePages, websiteForms, domainRecords, migrationTasks |
 
 ## Codex Review Queue
 
@@ -121,6 +125,22 @@ The Phase 2 MVP is implemented as a local-only dashboard package under `packages
 | Legacy Migration | Shows production cutover as blocked by Apps Script parity, runtime order, live route usage, Secret Manager, approval owners, and BigQuery table-map blockers. |
 
 Status changes in the Phase 2 MVP are stored only in the running local dashboard process. They are not persisted to production systems and are not treated as approvals for live work.
+
+## Phase 2.1 Website Platform Visibility
+
+Phase 2.1 is documentation and planning only. A future Admin Dashboard module should make the website migration safe to inspect before any DNS or hosting cutover:
+
+| Capability | Dashboard expectation |
+| --- | --- |
+| Squarespace retirement status | Show that Squarespace is temporary for public pages/forms/domain management only. |
+| Page inventory | Track each current Squarespace URL, replacement repo route, owner, SEO needs, and redirect decision. |
+| Form inventory | Track current form fields, Sheets/Apps Script dependencies, notification owners, and replacement app/API intake route. |
+| DNS readiness | Show registrar, nameservers, DNS record export, TTL plan, staging records, and approval owner. |
+| Staging validation | Show public website, app shell, API, redirect, and showcase staging status. |
+| Rollback readiness | Show prior hosting target, DNS rollback steps, decision owner, and monitoring checklist. |
+| Never-Squarespace surfaces | Flag admin tools, authenticated dashboards, billing workflows, internal review queues, redirects, APIs, and dataset workflows as blocked from Squarespace hosting. |
+
+No Phase 2.1 dashboard visibility item authorizes production hosting, DNS, Squarespace, or app/API changes.
 
 ## RBAC
 
