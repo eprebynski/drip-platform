@@ -123,6 +123,28 @@ The recommended evidence collection workflow is:
 9. Keep `UNKNOWN` fields until verified.
 10. Do not start Phase 3 from raw imports or importer output alone.
 
+## Phase 2.6 Public Evidence Collector
+
+Phase 2.6 adds a local-only collector that can prefill the same private `inbox/` with public/read-only evidence from `driphealthcare.com`, sitemap-listed public pages, public page source, public DNS lookups, and public RDAP/domain data.
+
+| Command | Purpose |
+| --- | --- |
+| `npm run evidence:collect-public` | Fetches public website/DNS/RDAP evidence and writes timestamped files only into the private `inbox/`. |
+| `npm run evidence:collect-public:dry-run` | Validates the collector path without public fetches or DNS/RDAP lookups. |
+
+The public collector does not use credentials, browser cookies, saved sessions, private APIs, or admin consoles. It does not submit forms, click mutating controls, call Apps Script modes, modify website pages/forms/redirects, change DNS, deploy, write to production systems, or start Phase 3. It records public references to Apps Script, upload, ScreenCloud, analytics tags, forms, scripts, assets, links, SEO metadata, and route candidates so Drip can compare public evidence against private exports.
+
+Public collector output should be handled like any other inbox evidence:
+
+1. Run `npm run evidence:collect-public`.
+2. Run `npm run evidence:import`.
+3. Run `npm run evidence:scan`.
+4. Run `npm run evidence:status`.
+5. Compare public observations with private export categories.
+6. Keep private-source fields `UNKNOWN` until verified by sanitized private evidence.
+
+This collector does not replace manual exports for Squarespace settings, form destinations, redirects, asset ownership, commerce/order configuration, authoritative DNS TTLs, registrar ownership, Apps Script deployed source/version mapping, Sheets destinations, analytics/Search Console ownership, upload-service backend ownership, ScreenCloud account details, or active campaign traffic assumptions.
+
 ## Codex Intake Rules
 
 | Situation | Codex behavior |
@@ -153,3 +175,7 @@ Phase 2.3 is complete when this checklist exists, every Phase 2.2 `UNKNOWN` cate
 ## Phase 2.4 Acceptance
 
 Phase 2.4 is complete when the local automation kit can create the private folder structure outside the repo, generate templates and redaction checklists, produce redaction reports, keep raw exports out of Git, preserve `UNKNOWN` defaults until verified, and pass local smoke checks without live credentials or production connections.
+
+## Phase 2.6 Acceptance
+
+Phase 2.6 is complete when the public evidence collector writes only to the private inbox, generates a manifest, handles missing hosts/routes gracefully, preserves the existing import/scan/status workflow, avoids credentials/cookies/private APIs/form submissions/production writes, and keeps Phase 3 blocked pending Drip/ChatGPT review.

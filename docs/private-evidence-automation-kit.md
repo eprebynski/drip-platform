@@ -2,9 +2,9 @@
 
 ## Scope
 
-Phase 2.4 adds local-only tooling for organizing private export evidence needed for Squarespace retirement and website migration planning. Phase 2.5 adds a local inbox workflow so Drip can place mixed exports/screenshots/PDFs/CSVs/TXT/Markdown/JSON/notes into one private folder, then classify and copy them into the right private evidence folders.
+Phase 2.4 adds local-only tooling for organizing private export evidence needed for Squarespace retirement and website migration planning. Phase 2.5 adds a local inbox workflow so Drip can place mixed exports/screenshots/PDFs/CSVs/TXT/Markdown/JSON/notes into one private folder, then classify and copy them into the right private evidence folders. Phase 2.6 adds a local public evidence collector that can prefill the private inbox with public/read-only website, DNS, and RDAP observations.
 
-This kit does not deploy, modify DNS, modify Squarespace, edit website pages/forms/redirects, modify Apps Script or triggers, write to live Google Sheets, Firestore, BigQuery, Stripe, ScreenCloud, create production resources, use live credentials, connect to private APIs, pull data from live systems, or start Phase 3 dataset ingestion.
+This kit does not deploy, modify DNS, modify Squarespace, edit website pages/forms/redirects, submit forms, modify Apps Script or triggers, write to live Google Sheets, Firestore, BigQuery, Stripe, ScreenCloud, create production resources, use live credentials, use browser cookies, connect to private APIs, access private admin consoles, pull private data from live systems, or start Phase 3 dataset ingestion.
 
 ## Default Private Folder
 
@@ -28,6 +28,8 @@ Run these from the repo root.
 | `npm run evidence:open-inbox` | Opens the private `inbox/` folder locally. |
 | `npm run evidence:create-folders` | Creates the private folder structure and README files. |
 | `npm run evidence:create-templates` | Creates folders, README files, summary stubs, manifest template, and redaction checklist. |
+| `npm run evidence:collect-public` | Collects public/read-only website, DNS, and RDAP evidence into `inbox/`. |
+| `npm run evidence:collect-public:dry-run` | Exercises the collector without fetching public resources or performing DNS/RDAP lookups. |
 | `npm run evidence:import` | Classifies and copies files from `inbox/` into evidence folders or `review-needed/`, then writes an import manifest. |
 | `npm run evidence:status` | Writes a private status report showing inbox files, imported files, review-needed files, missing categories, UNKNOWN summaries, and the recommended next command. |
 | `npm run evidence:summary-stubs` | Creates blank sanitized-summary templates for each export category. |
@@ -149,6 +151,37 @@ Confidence is intentionally conservative:
 | LOW | Multiple categories match closely or only weak terms are present; file is sent to `review-needed/`. |
 | UNKNOWN | No reliable match; file is sent to `review-needed/`. |
 
+## Public Evidence Collector
+
+`npm run evidence:collect-public` writes timestamped public evidence files into:
+
+```text
+~/Documents/Drip/private-evidence/inbox
+```
+
+The collector uses public GET requests only, does not use credentials, does not use cookies or saved sessions, does not access private admin consoles, does not submit forms, does not call Apps Script modes, and does not modify production systems. It refuses to use an evidence root inside the repo and writes only to `inbox/`.
+
+Collected website evidence includes homepage HTML, `robots.txt`, `sitemap.xml`, sitemap page HTML snapshots, page inventory, route inventory, form inventory, script inventory, external link inventory, asset/media inventory, SEO/meta/canonical inventory, Apps Script reference snippets, upload host references, ScreenCloud references, Google Analytics/tag references, and active route candidates for campaign/conference/provider/vendor/advertiser-style paths.
+
+Collected public DNS/domain evidence includes A, AAAA, CNAME, MX, TXT, SPF, DMARC, NS, SOA, and CAA lookup results for known Drip hosts, plus a public RDAP/domain JSON summary when available without credentials.
+
+Useful local test options:
+
+```text
+-- --dry-run --skip-dns --skip-rdap
+-- --base-url http://127.0.0.1:PORT --domain example.test --skip-dns --skip-rdap
+```
+
+The collector output is a prefill aid. It does not replace private Squarespace exports, registrar/DNS exports, Apps Script source/version mapping, Sheets destination maps, analytics/Search Console exports, commerce settings, upload-service ownership evidence, or Drip/ChatGPT review. Any private-source field remains `UNKNOWN` until verified from sanitized private evidence.
+
+After collection, run:
+
+```text
+npm run evidence:import
+npm run evidence:scan
+npm run evidence:status
+```
+
 ## Status Report
 
 `npm run evidence:status` writes a local report under `manifests/` showing:
@@ -164,15 +197,16 @@ Confidence is intentionally conservative:
 ## Safe Workflow
 
 1. Run `npm run evidence:create-templates`.
-2. Run `npm run evidence:open-inbox`.
-3. Download or drag exports/screenshots/PDFs/CSVs/TXT/Markdown/JSON/notes into `inbox/`.
-4. Run `npm run evidence:import`.
-5. Run `npm run evidence:scan`.
-6. Review the redaction report in the private `redaction-reports/` folder.
-7. Run `npm run evidence:status` to see missing categories and remaining `UNKNOWN` summaries.
-8. Fill sanitized summary stubs only after evidence is reviewed and redacted.
-9. Keep any unverified field marked `UNKNOWN`.
-10. Commit only sanitized documentation after Drip/ChatGPT review.
+2. Optionally run `npm run evidence:collect-public` to prefill public/read-only evidence.
+3. Run `npm run evidence:open-inbox`.
+4. Download or drag exports/screenshots/PDFs/CSVs/TXT/Markdown/JSON/notes into `inbox/`.
+5. Run `npm run evidence:import`.
+6. Run `npm run evidence:scan`.
+7. Review the redaction report in the private `redaction-reports/` folder.
+8. Run `npm run evidence:status` to see missing categories and remaining `UNKNOWN` summaries.
+9. Fill sanitized summary stubs only after evidence is reviewed and redacted.
+10. Keep any unverified field marked `UNKNOWN`.
+11. Commit only sanitized documentation after Drip/ChatGPT review.
 
 ## Git Safety
 

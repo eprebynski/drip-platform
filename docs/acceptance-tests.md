@@ -13,6 +13,7 @@
 | 2.3 Manual export review plan | Manual export checklist and sensitive evidence handling policy are documented; every Phase 2.2 `UNKNOWN` category maps to a safe export step; no live credentials, production changes, DNS changes, Squarespace changes, or Phase 3 dataset ingestion occur. |
 | 2.4 Private evidence automation kit | Local scripts create private evidence folders outside the repo, generate README files/templates/manifests/redaction checklists, scan for sensitive patterns non-destructively, write private redaction reports, preserve `UNKNOWN` defaults, and require no live credentials or production calls. |
 | 2.5 Private evidence inbox workflow | Local scripts create `inbox/` and `review-needed/`, classify/copy inbox files, deduplicate by hash, generate import manifests/status reports, preserve inbox originals by default, preserve `UNKNOWN` defaults, and require no live credentials, private APIs, production calls, or Phase 3 ingestion. |
+| 2.6 Public evidence auto-collector | Local script collects public/read-only website, DNS, and RDAP evidence into the private inbox only, generates a manifest, handles missing hosts/routes gracefully, preserves import/scan/status workflow, and requires no live credentials, cookies, private APIs, production writes, or Phase 3 ingestion. |
 | 3 Dataset ingestion/MI | Dataset upload validates schema; staging load succeeds; production load requires approval; recommendations include required scores and freshness warnings. |
 | 4 Daily automation | Jobs are idempotent; failed jobs create humanReviewTasks; activation cannot bypass safety/date/billing/placement/provider approval checks. |
 | 5 Display abstraction | DisplayProviderService contract tests pass; ScreenCloud dry-run produces expected diff; production sync requires approval. |
@@ -179,3 +180,19 @@ Every major workflow must expose status, last run, owner, errors, approval statu
 | Scanner remains non-destructive | Scanner still writes reports and optional safe redacted copies without modifying raw evidence. |
 | No production credential requirement | Inbox workflow runs locally without live credentials, private APIs, or production systems. |
 | No production change | Validation confirms no deploy, DNS, Squarespace, website, form, redirect, Apps Script, Sheets, Firestore, BigQuery, Stripe, ScreenCloud, production-resource, live credential, private API, or Phase 3 dataset-ingestion changes. |
+
+## Phase 2.6 Public Evidence Collector Tests
+
+| Test | Expected result |
+| --- | --- |
+| Package scripts exist | Root package scripts expose `evidence:collect-public` and `evidence:collect-public:dry-run`. |
+| Private inbox only | Collector refuses a private evidence root inside the repository and writes generated files only under `private-evidence/inbox/`. |
+| Manifest generated | Collector writes a timestamped manifest with collection date, URLs fetched, DNS lookups, files written, errors, skipped resources, production impact `NONE`, credentials `NO`, private APIs `NO`, forms submitted `NO`, and Phase 3 `NO`. |
+| Public page inventories | Collector writes timestamped CSVs for page list, route inventory, forms, scripts, external links, assets/media, SEO/meta/canonical data, public Apps Script references, upload references, ScreenCloud references, Google Analytics references, and active route candidates. |
+| Public DNS/domain inventories | Collector writes public DNS records and summary, and writes or explicitly skips RDAP JSON when unavailable without credentials. |
+| Dry-run behavior | `evidence:collect-public:dry-run` exercises output generation without public fetches or DNS/RDAP lookups. |
+| Missing hosts/routes handled | Missing sitemap pages, subdomains, DNS records, and RDAP data are recorded as skipped or errors without stopping the whole run. |
+| No credential/cookie usage | Collector does not read keychains, browser cookies, saved sessions, live credentials, private APIs, or authenticated admin pages. |
+| No form submissions | Collector records public form source only and never submits forms or calls Apps Script modes. |
+| Existing inbox workflow still works | Public collector output can pass through `evidence:import`, `evidence:scan`, and `evidence:status` locally. |
+| No production change | Validation confirms no deploy, DNS, Squarespace, website, form, redirect, Apps Script, Sheets, Firestore, BigQuery, Stripe, ScreenCloud, production-resource, live credential, private API, authenticated access, or Phase 3 dataset-ingestion changes. |

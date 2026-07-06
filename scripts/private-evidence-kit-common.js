@@ -186,5 +186,5 @@ export function redactionChecklist() {
 }
 
 export function printHelp(commandName) {
-  console.log(`${commandName}\n\nOptions:\n  --root <path>       Private evidence root. Default: ${DEFAULT_PRIVATE_EVIDENCE_DIR}\n  --force             Overwrite generated templates/readmes.\n  --move              Importer only: remove inbox original after a successful copy.\n  --folder <name>     Folder opener only: open a specific private evidence subfolder.\n  --safe-redact       Scanner only: write redacted copies under redaction-reports/redacted-copies.\n`);
+  console.log(`${commandName}\n\nOptions:\n  --root <path>       Private evidence root. Default: ${DEFAULT_PRIVATE_EVIDENCE_DIR}\n  --force             Overwrite generated templates/readmes.\n  --move              Importer only: remove inbox original after a successful copy.\n  --folder <name>     Folder opener only: open a specific private evidence subfolder.\n  --safe-redact       Scanner only: write redacted copies under redaction-reports/redacted-copies.\n  --dry-run           Public collector only: skip public fetches and DNS/RDAP lookups.\n  --base-url <url>    Public collector only: base public site URL. Default: https://driphealthcare.com.\n  --domain <domain>   Public collector only: DNS/RDAP domain. Default: driphealthcare.com.\n`);
 }
