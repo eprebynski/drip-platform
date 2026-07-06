@@ -1,0 +1,17 @@
+{
+  "name": "@drip/services-local",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Local-only Phase 1.5 service skeletons for the Drip Healthcare rebuild.",
+  "main": "./src/index.js",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
