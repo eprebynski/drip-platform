@@ -9,6 +9,7 @@
 | 1.5 Local service skeletons | Local services use shared contracts, mock repositories, dry-run guards, and feature flags OFF; all skeleton tests pass without credentials. |
 | 2 Admin Dashboard MVP | Admin can view System Health, Jobs & Errors, Human Review Queue, Codex Review Queue, Feature Flags, Dataset Uploads, Market Intelligence, Display Placements, Billing Review, Backup & Restore, and Legacy Migration; local status changes remain in memory; no production systems changed. |
 | 2.1 Website platform simplification | Squarespace retirement plan, hosting/domain architecture, staging plan, DNS migration plan, rollback plan, and cutover checklist are documented; no DNS, Squarespace, deploy, credential, or production-resource changes occur; Phase 3 remains blocked. |
+| 2.2 Website current-state inventory | Public website, form, script/embed, redirect, asset, SEO/analytics, DNS/registrar, dependency, rebuild/retain/retire, cutover-risk, and manual-info tables are documented from read-only evidence or marked `UNKNOWN`; no DNS, Squarespace, deploy, credential, or production-resource changes occur; Phase 3 remains blocked. |
 | 3 Dataset ingestion/MI | Dataset upload validates schema; staging load succeeds; production load requires approval; recommendations include required scores and freshness warnings. |
 | 4 Daily automation | Jobs are idempotent; failed jobs create humanReviewTasks; activation cannot bypass safety/date/billing/placement/provider approval checks. |
 | 5 Display abstraction | DisplayProviderService contract tests pass; ScreenCloud dry-run produces expected diff; production sync requires approval. |
@@ -114,4 +115,18 @@ Every major workflow must expose status, last run, owner, errors, approval statu
 | Hosting recommendation | Docs compare Firebase Hosting plus Cloud Run, Cloud Run behind load balancer, static frontend with API backend, and GCP static hosting, with a recommended simple option. |
 | DNS and staging plan | Docs include DNS migration guardrails, staging domain plan, production cutover checklist, and rollback plan. |
 | No production change | Validation confirms no deploy, DNS, Squarespace, Apps Script, Sheets, Firestore, BigQuery, Stripe, ScreenCloud, production-resource, or live credential changes. |
+| Phase 3 remains blocked | Codex task plan and review packet keep dataset ingestion blocked until ChatGPT/Drip review. |
+
+## Phase 2.2 Website Inventory Tests
+
+| Test | Expected result |
+| --- | --- |
+| Current inventory doc exists | `docs/website-current-state-inventory.md` exists and states the work is read-only. |
+| Required inventory tables | Page, form, script/embed, redirect, asset, SEO/analytics, DNS/registrar, dependency, rebuild/retain/retire, cutover-risk, and manual-info tables are present. |
+| Unknowns are explicit | Fields requiring private Squarespace, DNS, Apps Script, Sheets, analytics, registrar, upload-service, or commerce access are marked `UNKNOWN`. |
+| Public evidence is source-labeled | Sitemap, robots, public fetches, DNS, and RDAP evidence are distinguished from assumptions. |
+| Custom code dependencies visible | Apps Script, upload, commerce, ScreenCloud, analytics, and QR/campaign redirect dependencies are documented. |
+| No live endpoint token committed | Active Apps Script deployment token is not repeated in repo docs. |
+| DNS guardrails preserved | DNS migration requires authoritative export, mail/verification preservation, staging validation, rollback, and separate approval. |
+| No production change | Validation confirms no deploy, DNS, Squarespace, website, form, redirect, Apps Script, Sheets, Firestore, BigQuery, Stripe, ScreenCloud, production-resource, or live credential changes. |
 | Phase 3 remains blocked | Codex task plan and review packet keep dataset ingestion blocked until ChatGPT/Drip review. |

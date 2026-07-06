@@ -4,6 +4,8 @@
 
 Phase 2.1 defines a documentation-only plan for removing Squarespace as a required website and application platform for Drip Healthcare. No DNS, Squarespace, Apps Script, Google, Stripe, ScreenCloud, production resource, or live credential change is part of this phase.
 
+Phase 2.2 adds a read-only current-state inventory in `docs/website-current-state-inventory.md`. The inventory used public website, sitemap, robots, DNS, and RDAP evidence only. It did not use live credentials and did not modify Squarespace, DNS, Apps Script, Sheets, Firestore, BigQuery, Stripe, ScreenCloud, or production resources.
+
 ## Recommendation
 
 Squarespace is not needed long term as the Drip Healthcare website or application platform. The rebuild should move public pages, authenticated app surfaces, admin dashboards, redirect services, API routes, and showcase pages into the Drip GitHub/GCP stack.
@@ -56,6 +58,20 @@ Before any cutover, create a source-verified inventory of current Squarespace as
 | Domains/DNS | Registrar, nameservers, DNS records, mail records, verification records, current hosting target, TTLs. |
 | Assets | Images, videos, PDFs, downloadable files, licenses, owners, required alt text. |
 | SEO and analytics | Current sitemap, indexed pages, tracking IDs, Search Console ownership, analytics ownership. |
+
+## Phase 2.2 Inventory Findings
+
+| Area | Read-only finding | Migration implication |
+| --- | --- | --- |
+| Current platform | Public headers and page source identify the live site as Squarespace with `www.driphealthcare.com` as primary. | Keep Squarespace temporarily until replacement pages, redirects, forms, and rollback are staged and approved. |
+| Public routes | The public sitemap lists 28 URLs; `/cart` is live; a linked `/providers/control-center` route returns 404. | Build a route-by-route redirect/rebuild/retire map before cutover. |
+| Forms | Multiple Squarespace form blocks are public, but fields, destinations, notifications, and storage are not exposed publicly. | Drip must export form configuration before migration. |
+| Custom operations | Public Squarespace pages call a live Apps Script web app for provider media center, display preferences, digital signage status/toggle, conference sponsorships, campaign submit/edit/archive/order, showcase JSON, and QR redirects. | These are production-sensitive dependencies and must move to tested app/API services before Squarespace retirement. |
+| Uploads | `conference-campaign-submit` posts images to `upload.driphealthcare.com/upload`; public DNS resolves the upload host. | Upload backend, storage, moderation, and retention must be inventoried. |
+| Commerce | `/store` and `/cart` are live Squarespace commerce surfaces. | Export products, orders, checkout/payment settings, and decide retain/retire before cutover. |
+| DNS/registrar | Public RDAP lists Squarespace Domains LLC; DNS currently points apex and `www` to Squarespace, with Google Workspace MX records and Google verification TXT records. | Preserve email and verification records; no DNS changes without authoritative export and separate approval. |
+
+The active public Apps Script deployment URL appears in page source. The inventory records the dependency and modes without repeating the deployment token in repo docs.
 
 ## Pages To Rebuild In The Drip Repo
 
@@ -144,6 +160,7 @@ Staging must use test data, test credentials, and non-production GCP resources. 
 | Page inventory complete | Every Squarespace page has a mapped replacement, archive decision, or redirect. |
 | Form inventory complete | Every form has a replacement intake route or approved temporary keep decision. |
 | DNS inventory complete | Registrar, nameservers, DNS records, TTLs, mail, and verification records are documented. |
+| Custom-code dependency inventory complete | Apps Script, upload, commerce, analytics, and redirect dependencies have owners and parity requirements. |
 | Replacement pages reviewed | Copy, media, SEO, accessibility, and mobile behavior approved. |
 | Staging validated | Staging pages, forms, redirects, and analytics pass acceptance tests. |
 | Rollback plan approved | DNS rollback targets, old Squarespace page availability, and decision owner are documented. |
@@ -178,3 +195,7 @@ Rollback requires the old Squarespace pages or prior hosting targets to remain a
 ## Phase 2.1 Acceptance
 
 This phase is complete when the plan is reviewed, the docs identify the temporary role for Squarespace, and Phase 3 remains blocked until ChatGPT/Drip review. It does not approve or perform production hosting, DNS, Squarespace, or app/API changes.
+
+## Phase 2.2 Acceptance
+
+This phase is complete when the read-only current-state inventory is reviewed, unknown private export fields are clearly marked, required manual export steps are documented, and Phase 3 remains blocked until ChatGPT/Drip review. It does not approve or perform production hosting, DNS, Squarespace, website, form, redirect, Apps Script, or app/API changes.
