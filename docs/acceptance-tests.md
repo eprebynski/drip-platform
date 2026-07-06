@@ -10,6 +10,7 @@
 | 2 Admin Dashboard MVP | Admin can view System Health, Jobs & Errors, Human Review Queue, Codex Review Queue, Feature Flags, Dataset Uploads, Market Intelligence, Display Placements, Billing Review, Backup & Restore, and Legacy Migration; local status changes remain in memory; no production systems changed. |
 | 2.1 Website platform simplification | Squarespace retirement plan, hosting/domain architecture, staging plan, DNS migration plan, rollback plan, and cutover checklist are documented; no DNS, Squarespace, deploy, credential, or production-resource changes occur; Phase 3 remains blocked. |
 | 2.2 Website current-state inventory | Public website, form, script/embed, redirect, asset, SEO/analytics, DNS/registrar, dependency, rebuild/retain/retire, cutover-risk, and manual-info tables are documented from read-only evidence or marked `UNKNOWN`; no DNS, Squarespace, deploy, credential, or production-resource changes occur; Phase 3 remains blocked. |
+| 2.3 Manual export review plan | Manual export checklist and sensitive evidence handling policy are documented; every Phase 2.2 `UNKNOWN` category maps to a safe export step; no live credentials, production changes, DNS changes, Squarespace changes, or Phase 3 dataset ingestion occur. |
 | 3 Dataset ingestion/MI | Dataset upload validates schema; staging load succeeds; production load requires approval; recommendations include required scores and freshness warnings. |
 | 4 Daily automation | Jobs are idempotent; failed jobs create humanReviewTasks; activation cannot bypass safety/date/billing/placement/provider approval checks. |
 | 5 Display abstraction | DisplayProviderService contract tests pass; ScreenCloud dry-run produces expected diff; production sync requires approval. |
@@ -130,3 +131,16 @@ Every major workflow must expose status, last run, owner, errors, approval statu
 | DNS guardrails preserved | DNS migration requires authoritative export, mail/verification preservation, staging validation, rollback, and separate approval. |
 | No production change | Validation confirms no deploy, DNS, Squarespace, website, form, redirect, Apps Script, Sheets, Firestore, BigQuery, Stripe, ScreenCloud, production-resource, or live credential changes. |
 | Phase 3 remains blocked | Codex task plan and review packet keep dataset ingestion blocked until ChatGPT/Drip review. |
+
+## Phase 2.3 Manual Export Plan Tests
+
+| Test | Expected result |
+| --- | --- |
+| Manual export plan exists | `docs/manual-export-collection-plan.md` exists and states the work is planning/evidence-intake only. |
+| Export checklist coverage | Checklist covers Squarespace pages, forms, custom code, redirects, assets, commerce, registrar, DNS records, analytics, Search Console, Apps Script deployments, Apps Script modes, Sheets destinations, upload service, ScreenCloud references, and active QR/campaign/conference routes. |
+| Required fields per category | Each export category documents owner, access needed, export steps, safe file format, redactions, storage, Codex consumption, Squarespace-retirement blocker status, Phase 3 blocker status, and rollback relevance. |
+| Sensitive evidence policy | Docs require secrets, tokens, private customer/order/payment data, and personal data to be redacted or stored outside the repo. |
+| Unknown coverage map | Every Phase 2.2 `UNKNOWN` category has a matching manual export step. |
+| No production credential requirement | Docs require read-only exports or sanitized summaries and do not require live credentials in the repo. |
+| No production change | Validation confirms no deploy, DNS, Squarespace, website, form, redirect, Apps Script, Sheets, Firestore, BigQuery, Stripe, ScreenCloud, production-resource, or live credential changes. |
+| Phase 3 remains blocked | Codex task plan and review packet keep dataset ingestion blocked until Drip/ChatGPT review of the sanitized evidence package. |
