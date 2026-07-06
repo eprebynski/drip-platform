@@ -8,6 +8,7 @@
 | 1 Foundation | Shared schemas validate required fields; lifecycle enum tests pass; jobRun and auditLog contracts exist; feature flags default off for production-impacting flows; dry-run guard blocks omitted/unauthorized writes; display provider adapters are stubs only. |
 | 1.5 Local service skeletons | Local services use shared contracts, mock repositories, dry-run guards, and feature flags OFF; all skeleton tests pass without credentials. |
 | 2 Admin Dashboard MVP | Admin can view System Health, Jobs & Errors, Human Review Queue, Codex Review Queue, Feature Flags, Dataset Uploads, Market Intelligence, Display Placements, Billing Review, Backup & Restore, and Legacy Migration; local status changes remain in memory; no production systems changed. |
+| 2.1 Website platform simplification | Squarespace retirement plan, hosting/domain architecture, staging plan, DNS migration plan, rollback plan, and cutover checklist are documented; no DNS, Squarespace, deploy, credential, or production-resource changes occur; Phase 3 remains blocked. |
 | 3 Dataset ingestion/MI | Dataset upload validates schema; staging load succeeds; production load requires approval; recommendations include required scores and freshness warnings. |
 | 4 Daily automation | Jobs are idempotent; failed jobs create humanReviewTasks; activation cannot bypass safety/date/billing/placement/provider approval checks. |
 | 5 Display abstraction | DisplayProviderService contract tests pass; ScreenCloud dry-run produces expected diff; production sync requires approval. |
@@ -101,3 +102,16 @@ Every major workflow must expose status, last run, owner, errors, approval statu
 | Unresolved blockers visible | System Health and Legacy Migration show Apps Script parity, runtime order, live route usage, Secret Manager, approval owner, and BigQuery table-map blockers. |
 | No production credentials required | Dashboard declares no live credential requirements or environment variable dependencies. |
 | No production service calls | Dashboard policy marks Apps Script, Sheets, Firestore, BigQuery, Stripe, ScreenCloud, display provider, and deploy calls disabled. |
+
+## Phase 2.1 Website Platform Planning Tests
+
+| Test | Expected result |
+| --- | --- |
+| Squarespace long-term recommendation | Docs state Squarespace is not needed long term as the website/application platform. |
+| Temporary Squarespace role | Docs state Squarespace may remain temporarily for current public pages/forms and possibly domain registration/DNS until safe cutover. |
+| Never-host-in-Squarespace list | Docs block admin tools, authenticated dashboards, billing workflows, internal review queues, redirects/APIs, and dataset workflows from Squarespace hosting. |
+| Inventory requirements | Docs require current Squarespace pages, forms, scripts, redirects, assets, SEO, analytics, and DNS records to be inventoried before migration. |
+| Hosting recommendation | Docs compare Firebase Hosting plus Cloud Run, Cloud Run behind load balancer, static frontend with API backend, and GCP static hosting, with a recommended simple option. |
+| DNS and staging plan | Docs include DNS migration guardrails, staging domain plan, production cutover checklist, and rollback plan. |
+| No production change | Validation confirms no deploy, DNS, Squarespace, Apps Script, Sheets, Firestore, BigQuery, Stripe, ScreenCloud, production-resource, or live credential changes. |
+| Phase 3 remains blocked | Codex task plan and review packet keep dataset ingestion blocked until ChatGPT/Drip review. |

@@ -14,6 +14,7 @@
 | DatasetIngestionService | Cloud Run service/job | Upload validation, schema mapping, quality checks, BigQuery loading. | Production loads require approval. |
 | MarketIntelligenceService | Cloud Run job | Refresh features and recommendations from BigQuery and search-interest signals. | Automated with freshness warnings. |
 | BackupService | Cloud Run job | Coordinate backups, metadata, alerts, and restore-test records. | Backups automated; restores never automatic. |
+| WebsiteFrontend | Firebase Hosting or GCP-first static hosting | Public marketing pages, static app shell assets, showcase pages, and preview channels. | Staged and DNS-cutover gated; no production change in Phase 2.1. |
 | AdminApi | Cloud Run service | Drip Admin Dashboard API for reviews, flags, jobs, backups, Codex queue. | RBAC protected. |
 | AdvertiserApi | Cloud Run service | Advertiser Dashboard submission, recommendations, reporting, billing visibility. | RBAC protected. |
 | MediaCenterApi | Cloud Run service | Provider profile, display preferences, provider-facing campaigns. | RBAC protected. |
@@ -42,6 +43,23 @@
 | DatasetIngestionService | `packages/services/src/dataset-ingestion-service.js` | Metadata and dry-run load plans only; no Cloud Storage/BigQuery. |
 | MarketIntelligenceService | `packages/services/src/intelligence-service.js` | Draft recommendations only; no live BigQuery/search/payor data. |
 | DailyOrchestrator | `packages/services/src/daily-orchestrator.js` | Local job logs only; no scheduler. |
+
+## Phase 2.1 Website And Domain Planning
+
+Squarespace is treated as a temporary public website/domain dependency, not a long-term service runtime. Admin tools, authenticated dashboards, billing workflows, campaign controls, internal review queues, redirect/event APIs, and dataset workflows must live behind Drip app/API service boundaries, not in Squarespace pages, forms, embeds, or scripts.
+
+| Surface | Target service boundary |
+| --- | --- |
+| `driphealthcare.com`, `www.driphealthcare.com` | WebsiteFrontend for public marketing pages. |
+| `admin.driphealthcare.com` | Admin Dashboard frontend plus AdminApi. |
+| `app.driphealthcare.com` | Shared authenticated app frontend plus service APIs. |
+| `app.driphealthcare.com/advertisers` | Advertiser Dashboard frontend plus AdvertiserApi. |
+| `app.driphealthcare.com/media-center` | Media Center frontend plus MediaCenterApi. |
+| `api.driphealthcare.com` | Cloud Run API boundary with auth/RBAC. |
+| `go.driphealthcare.com` | RedirectService with event logging and rollback plan. |
+| `showcase.driphealthcare.com` | WebsiteFrontend/showcase frontend plus event APIs where needed. |
+
+Recommended hosting is Firebase Hosting or equivalent GCP-first static hosting for public/static frontends, with Cloud Run APIs for dynamic behavior. DNS migration, Squarespace edits, and production hosting resources are explicitly out of scope until a separately approved cutover task.
 
 ## Source-Verified Extraction Targets
 
@@ -90,6 +108,7 @@
 | IntakeProcessor | /intake/squarespace, /intake/sheets/dry-run |
 | DisplayProviderService | /display/placements/preview, /display/placements/sync, /display/playback-logs |
 | BillingService | /billing/preview, /billing/approve, /billing/execute |
+| WebsiteFrontend | /, /advertisers, /media-center, /contact, /privacy, /terms, /showcase |
 
 ## Environment Separation
 
