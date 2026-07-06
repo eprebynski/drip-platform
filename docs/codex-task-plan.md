@@ -88,6 +88,19 @@ Codex should produce reviewable, dashboard-readable rebuild work packets. No pro
 | Production impact | None. No deploys, DNS, Squarespace, website/page/form/redirect edits, Apps Script, triggers, Sheets, Firestore, BigQuery, Stripe, ScreenCloud, production-resource, or live credential changes. |
 | Phase 3 status | Still blocked until Drip/ChatGPT review of the sanitized evidence package. |
 
+## Phase 2.4 Private Evidence Automation Kit Status
+
+| Item | Status |
+| --- | --- |
+| Branch name requested | `rebuild/phase-2-4-private-evidence-automation-kit`. |
+| Local scripts | Added local-only evidence folder, template, summary-stub, and redaction-scan scripts under `scripts/`. |
+| Package scripts | Added root `npm run evidence:create-folders`, `evidence:create-templates`, `evidence:scan`, and `evidence:summary-stubs`. |
+| Private folder default | `~/Documents/Drip/private-evidence`; scripts refuse roots inside the repo. |
+| Evidence outputs | README files, sanitized-summary stubs, manifest template, redaction checklist, and redaction reports. |
+| Sensitive-data posture | Scanner is non-destructive; raw exports stay outside Git; findings are masked in reports; `UNKNOWN` remains until verified. |
+| Production impact | None. No deploys, DNS, Squarespace, website/page/form/redirect edits, Apps Script, triggers, Sheets, Firestore, BigQuery, Stripe, ScreenCloud, production-resource, live credentials, private API calls, or Phase 3 dataset ingestion. |
+| Phase 3 status | Still blocked until Drip/ChatGPT review. |
+
 ## Task Packet Standard
 
 Every Codex task should include:
@@ -118,6 +131,7 @@ Every Codex task should include:
 | 2.1 | Document website platform simplification and Squarespace retirement plan. |
 | 2.2 | Inventory current Squarespace website, forms, scripts, redirects, assets, SEO, analytics, DNS, and migration risks in read-only mode. |
 | 2.3 | Plan manual private-source exports, redaction, evidence storage, and review steps for resolving website migration `UNKNOWN` fields. |
+| 2.4 | Add local-only private evidence automation for folders, templates, manifests, redaction reports, and sanitized summary stubs. |
 | 3 | Implement dataset upload, validation, staging load, recommendation refresh skeleton. |
 | 4 | Implement daily automation jobs in dry-run/shadow mode. |
 | 5 | Implement DisplayProviderService and ScreenCloudAdapter dry-run. |
@@ -211,6 +225,22 @@ Tests or validation: Documentation review, acceptance checklist coverage, local 
 Approvals needed: Drip/ChatGPT review before private evidence is converted into migration decisions, before Squarespace/DNS/hosting/App Script/app/API changes, and before Phase 3 dataset ingestion.
 Open questions: Who owns each export category, where Drip wants private evidence stored, which private exports can be summarized into repo docs, and which unresolved dependencies block Phase 3.
 Recommended next Codex prompt: Review the Phase 2.3 manual export plan with Drip and ChatGPT; collect sanitized evidence summaries for Squarespace pages/forms/code/redirects/assets/commerce, registrar/DNS, GA/Search Console, Apps Script, Sheets, upload service, ScreenCloud references, and active QR/campaign/conference routes; keep raw secrets/private data outside the repo and do not start Phase 3.
+```
+
+## Phase 2.4 Codex Review Queue Item
+
+```text
+Codex Review Queue Item
+Phase: Phase 2.4
+Title: Private Evidence Automation Kit
+Summary: Local-only scripts and documentation that help Drip create the private evidence folder structure outside the repo, generate README files, blank sanitized-summary stubs, manifest and redaction checklist templates, and run a non-destructive sensitive-pattern scanner that writes private redaction reports.
+Files changed: package.json, .gitignore, scripts/private-evidence-kit-common.js, scripts/create-private-evidence-folders.js, scripts/generate-private-evidence-templates.js, scripts/generate-sanitized-summary-stubs.js, scripts/scan-private-evidence-for-secrets.js, docs/private-evidence-automation-kit.md, docs/manual-export-collection-plan.md, docs/acceptance-tests.md, docs/risk-register.md, docs/codex-task-plan.md
+Risk level: MEDIUM
+Production impact: None. No deploys, DNS changes, Squarespace changes, website/page/form/redirect edits, Apps Script changes, trigger changes, live Sheets/Firestore/BigQuery/Stripe/ScreenCloud writes, production resources, live credentials, private API calls, or Phase 3 dataset ingestion.
+Tests or validation: Local script smoke checks, package tests where available, diff check, secret-pattern scan, and PR scope verification.
+Approvals needed: Drip/ChatGPT review before using sanitized summaries for migration decisions or starting Phase 3.
+Open questions: Where Drip wants the private evidence folder stored long term, who owns each export category, and which sanitized summaries can be reviewed for repo documentation.
+Recommended next Codex prompt: Review Phase 2.4 with Drip and ChatGPT; run the private evidence automation kit locally to create folders and templates, collect private exports outside Git, run the scanner, fill only sanitized summaries, keep UNKNOWN fields until verified, and do not start Phase 3 or change production systems.
 ```
 
 ## Approval Policy

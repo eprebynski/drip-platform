@@ -84,6 +84,19 @@ Phase 2.2 used only public evidence. Any private-source field remains `UNKNOWN` 
 7. Have Drip and ChatGPT review the sanitized manifest before any follow-on implementation prompt.
 8. Update repo docs only with verified sanitized findings.
 
+## Phase 2.4 Automation Kit
+
+Phase 2.4 adds local-only scripts and documentation in `docs/private-evidence-automation-kit.md` to help Drip create the private evidence folder structure, generate README files, create sanitized-summary stubs, create manifest and redaction checklist templates, and run non-destructive secret-pattern scans.
+
+| Command | Purpose |
+| --- | --- |
+| `npm run evidence:create-folders` | Creates the private evidence folders and README files outside the repo. |
+| `npm run evidence:create-templates` | Creates folders, README files, summary stubs, manifest template, and redaction checklist. |
+| `npm run evidence:summary-stubs` | Creates blank sanitized-summary templates with `UNKNOWN` defaults. |
+| `npm run evidence:scan` | Writes a private redaction report and recommends redaction without modifying raw files. |
+
+The default private evidence folder is `~/Documents/Drip/private-evidence`. The scripts refuse to use a target inside this repository. Raw exports still stay outside Git, and unverified fields still remain `UNKNOWN`.
+
 ## Codex Intake Rules
 
 | Situation | Codex behavior |
@@ -110,3 +123,7 @@ Phase 3 dataset ingestion remains blocked until Drip and ChatGPT review the sani
 ## Phase 2.3 Acceptance
 
 Phase 2.3 is complete when this checklist exists, every Phase 2.2 `UNKNOWN` category has a matching safe export step, sensitive-data handling is documented, no production systems are changed, and Phase 3 remains blocked pending Drip/ChatGPT review.
+
+## Phase 2.4 Acceptance
+
+Phase 2.4 is complete when the local automation kit can create the private folder structure outside the repo, generate templates and redaction checklists, produce redaction reports, keep raw exports out of Git, preserve `UNKNOWN` defaults until verified, and pass local smoke checks without live credentials or production connections.

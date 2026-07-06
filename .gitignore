@@ -1,1 +1,6 @@
 .DS_Store
+
+# Backup guard: private evidence should stay outside the repo.
+private-evidence/
+redaction-reports/
+sanitized-summaries/
