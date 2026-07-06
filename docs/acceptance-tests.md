@@ -11,6 +11,7 @@
 | 2.1 Website platform simplification | Squarespace retirement plan, hosting/domain architecture, staging plan, DNS migration plan, rollback plan, and cutover checklist are documented; no DNS, Squarespace, deploy, credential, or production-resource changes occur; Phase 3 remains blocked. |
 | 2.2 Website current-state inventory | Public website, form, script/embed, redirect, asset, SEO/analytics, DNS/registrar, dependency, rebuild/retain/retire, cutover-risk, and manual-info tables are documented from read-only evidence or marked `UNKNOWN`; no DNS, Squarespace, deploy, credential, or production-resource changes occur; Phase 3 remains blocked. |
 | 2.3 Manual export review plan | Manual export checklist and sensitive evidence handling policy are documented; every Phase 2.2 `UNKNOWN` category maps to a safe export step; no live credentials, production changes, DNS changes, Squarespace changes, or Phase 3 dataset ingestion occur. |
+| 2.4 Private evidence automation kit | Local scripts create private evidence folders outside the repo, generate README files/templates/manifests/redaction checklists, scan for sensitive patterns non-destructively, write private redaction reports, preserve `UNKNOWN` defaults, and require no live credentials or production calls. |
 | 3 Dataset ingestion/MI | Dataset upload validates schema; staging load succeeds; production load requires approval; recommendations include required scores and freshness warnings. |
 | 4 Daily automation | Jobs are idempotent; failed jobs create humanReviewTasks; activation cannot bypass safety/date/billing/placement/provider approval checks. |
 | 5 Display abstraction | DisplayProviderService contract tests pass; ScreenCloud dry-run produces expected diff; production sync requires approval. |
@@ -144,3 +145,19 @@ Every major workflow must expose status, last run, owner, errors, approval statu
 | No production credential requirement | Docs require read-only exports or sanitized summaries and do not require live credentials in the repo. |
 | No production change | Validation confirms no deploy, DNS, Squarespace, website, form, redirect, Apps Script, Sheets, Firestore, BigQuery, Stripe, ScreenCloud, production-resource, or live credential changes. |
 | Phase 3 remains blocked | Codex task plan and review packet keep dataset ingestion blocked until Drip/ChatGPT review of the sanitized evidence package. |
+
+## Phase 2.4 Private Evidence Automation Kit Tests
+
+| Test | Expected result |
+| --- | --- |
+| Automation kit doc exists | `docs/private-evidence-automation-kit.md` explains local-only usage, defaults, commands, folder structure, redaction scanning, and safety boundaries. |
+| Package scripts exist | Root package scripts expose `evidence:create-folders`, `evidence:create-templates`, `evidence:scan`, and `evidence:summary-stubs`. |
+| Private folder outside repo | Scripts default to `~/Documents/Drip/private-evidence` and refuse a root path inside the repository. |
+| Folder creation | Smoke check creates all required private evidence subfolders and README files in a non-repo test location. |
+| Summary templates | Smoke check creates sanitized summary stubs for every Phase 2.3 evidence category. |
+| Manifest and checklist | Smoke check creates an evidence manifest template and redaction checklist. |
+| Redaction scanner | Scanner writes a private redaction report, masks matched values, and does not modify raw files. |
+| `UNKNOWN` defaults | Generated templates preserve `UNKNOWN` fields until verified by evidence. |
+| No production credential requirement | Scripts run locally without live credentials, private APIs, or production systems. |
+| No production change | Validation confirms no deploy, DNS, Squarespace, website, form, redirect, Apps Script, Sheets, Firestore, BigQuery, Stripe, ScreenCloud, production-resource, or live credential changes. |
+| Phase 3 remains blocked | Codex task plan and review packet keep dataset ingestion blocked until Drip/ChatGPT review. |

@@ -1,0 +1,16 @@
+{
+  "name": "drip-platform-local-tooling",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Local-only tooling for the Drip Healthcare rebuild.",
+  "scripts": {
+    "evidence:create-folders": "node ./scripts/create-private-evidence-folders.js",
+    "evidence:create-templates": "node ./scripts/generate-private-evidence-templates.js",
+    "evidence:scan": "node ./scripts/scan-private-evidence-for-secrets.js",
+    "evidence:summary-stubs": "node ./scripts/generate-sanitized-summary-stubs.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
