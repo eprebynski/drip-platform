@@ -75,6 +75,19 @@ Codex should produce reviewable, dashboard-readable rebuild work packets. No pro
 | Production impact | None. No deploys, DNS, Squarespace, website/page/form/redirect edits, Apps Script, Sheets, Firestore, BigQuery, Stripe, ScreenCloud, production-resource, or live credential changes. |
 | Phase 3 status | Still blocked until ChatGPT/Drip review. |
 
+## Phase 2.3 Manual Export Collection Plan Status
+
+| Item | Status |
+| --- | --- |
+| Branch name requested | `rebuild/phase-2-3-manual-export-review-plan`. |
+| Manual export plan | Added `docs/manual-export-collection-plan.md`. |
+| Evidence boundary | Planning only; raw private exports stay outside the repo unless sanitized and approved for documentation. |
+| Private-source coverage | Squarespace pages/forms/code/redirects/assets/commerce, registrar/DNS, GA/Search Console, Apps Script, Sheets, upload service, ScreenCloud references, and active QR/campaign/conference routes. |
+| Sensitive-data policy | Secrets, private tokens, customer/order/payment data, and personal data must be redacted or kept outside Git. |
+| `UNKNOWN` handling | Phase 2.2 `UNKNOWN` categories map to safe manual export steps and remain `UNKNOWN` until verified. |
+| Production impact | None. No deploys, DNS, Squarespace, website/page/form/redirect edits, Apps Script, triggers, Sheets, Firestore, BigQuery, Stripe, ScreenCloud, production-resource, or live credential changes. |
+| Phase 3 status | Still blocked until Drip/ChatGPT review of the sanitized evidence package. |
+
 ## Task Packet Standard
 
 Every Codex task should include:
@@ -104,6 +117,7 @@ Every Codex task should include:
 | 2 | Build Admin Dashboard MVP and Codex Review Queue. |
 | 2.1 | Document website platform simplification and Squarespace retirement plan. |
 | 2.2 | Inventory current Squarespace website, forms, scripts, redirects, assets, SEO, analytics, DNS, and migration risks in read-only mode. |
+| 2.3 | Plan manual private-source exports, redaction, evidence storage, and review steps for resolving website migration `UNKNOWN` fields. |
 | 3 | Implement dataset upload, validation, staging load, recommendation refresh skeleton. |
 | 4 | Implement daily automation jobs in dry-run/shadow mode. |
 | 5 | Implement DisplayProviderService and ScreenCloudAdapter dry-run. |
@@ -181,6 +195,22 @@ Tests or validation: Read-only public website/sitemap/robots/DNS/RDAP checks, do
 Approvals needed: Drip/ChatGPT review before any Squarespace, DNS, hosting, Apps Script, redirect, upload, commerce, analytics, or production-resource changes. Phase 3 dataset ingestion remains blocked.
 Open questions: Who owns Squarespace/registrar/DNS/analytics/upload/commerce today, where each form writes, which Apps Script deployment/source is live, and which custom routes have current traffic.
 Recommended next Codex prompt: Review Phase 2.2 inventory with Drip and ChatGPT; collect read-only Squarespace admin exports, DNS zone export, Apps Script deployment/source, form destinations, upload-service ownership, commerce settings, and analytics/Search Console reports; do not change production systems or start Phase 3.
+```
+
+## Phase 2.3 Codex Review Queue Item
+
+```text
+Codex Review Queue Item
+Phase: Phase 2.3
+Title: Manual Export Collection and Private-Source Inventory Review Plan
+Summary: Documentation-only plan for Drip to safely collect, redact, store, and review private-source evidence needed to resolve Phase 2.2 website migration UNKNOWN fields before Squarespace retirement planning advances.
+Files changed: docs/manual-export-collection-plan.md, docs/website-current-state-inventory.md, docs/website-platform-simplification-plan.md, docs/hosting-domain-architecture.md, docs/risk-register.md, docs/acceptance-tests.md, docs/codex-task-plan.md
+Risk level: MEDIUM
+Production impact: None. No deploys, DNS changes, Squarespace changes, website/page/form/redirect edits, Apps Script changes, trigger changes, live Sheets/Firestore/BigQuery/Stripe/ScreenCloud writes, production resources, live credentials, or Phase 3 dataset ingestion.
+Tests or validation: Documentation review, acceptance checklist coverage, local package tests where available, and secret-pattern scan.
+Approvals needed: Drip/ChatGPT review before private evidence is converted into migration decisions, before Squarespace/DNS/hosting/App Script/app/API changes, and before Phase 3 dataset ingestion.
+Open questions: Who owns each export category, where Drip wants private evidence stored, which private exports can be summarized into repo docs, and which unresolved dependencies block Phase 3.
+Recommended next Codex prompt: Review the Phase 2.3 manual export plan with Drip and ChatGPT; collect sanitized evidence summaries for Squarespace pages/forms/code/redirects/assets/commerce, registrar/DNS, GA/Search Console, Apps Script, Sheets, upload service, ScreenCloud references, and active QR/campaign/conference routes; keep raw secrets/private data outside the repo and do not start Phase 3.
 ```
 
 ## Approval Policy

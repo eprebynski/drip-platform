@@ -6,6 +6,8 @@ Phase 2.1 defines a documentation-only plan for removing Squarespace as a requir
 
 Phase 2.2 adds a read-only current-state inventory in `docs/website-current-state-inventory.md`. The inventory used public website, sitemap, robots, DNS, and RDAP evidence only. It did not use live credentials and did not modify Squarespace, DNS, Apps Script, Sheets, Firestore, BigQuery, Stripe, ScreenCloud, or production resources.
 
+Phase 2.3 adds `docs/manual-export-collection-plan.md` for private-source evidence collection planning. It defines how Drip should export and redact Squarespace, DNS, registrar, Apps Script, Sheets, analytics, commerce, upload-service, display, and route-traffic evidence without committing secrets or changing production systems.
+
 ## Recommendation
 
 Squarespace is not needed long term as the Drip Healthcare website or application platform. The rebuild should move public pages, authenticated app surfaces, admin dashboards, redirect services, API routes, and showcase pages into the Drip GitHub/GCP stack.
@@ -72,6 +74,20 @@ Before any cutover, create a source-verified inventory of current Squarespace as
 | DNS/registrar | Public RDAP lists Squarespace Domains LLC; DNS currently points apex and `www` to Squarespace, with Google Workspace MX records and Google verification TXT records. | Preserve email and verification records; no DNS changes without authoritative export and separate approval. |
 
 The active public Apps Script deployment URL appears in page source. The inventory records the dependency and modes without repeating the deployment token in repo docs.
+
+## Phase 2.3 Manual Export Gate
+
+Squarespace retirement cannot move from planning to migration until Drip has reviewed the sanitized evidence package described in `docs/manual-export-collection-plan.md`.
+
+| Evidence package area | Why it matters |
+| --- | --- |
+| Squarespace pages, forms, code injection, redirects, assets, and commerce | Confirms what must be rebuilt, retained, retired, or redirected before the builder can be retired. |
+| Registrar and DNS zone export | Protects email, verification records, hosting rollback, and future DNS cutover planning. |
+| Apps Script deployed source, modes, and Sheets destinations | Prevents public website routes from losing live operational behavior during rebuild. |
+| Analytics, Search Console, route traffic, and active QR/campaign/conference routes | Prioritizes redirects and validates SEO/traffic preservation. |
+| Upload service and ScreenCloud references | Identifies non-Squarespace dependencies that still need owners, rollback, and replacement plans. |
+
+Raw private exports should stay outside the repo. Only sanitized findings, unresolved `UNKNOWN` fields, and reviewed migration decisions should be committed.
 
 ## Pages To Rebuild In The Drip Repo
 
@@ -192,6 +208,15 @@ Rollback requires the old Squarespace pages or prior hosting targets to remain a
 | App surfaces separated | Admin/app/API/redirect surfaces are hosted in the Drip GitHub/GCP architecture. |
 | Stakeholder approval | Drip approves retirement and confirms no current Squarespace-only workflow remains. |
 
+## Private Evidence Requirement Before Retirement
+
+| Requirement | Exit condition |
+| --- | --- |
+| Manual export checklist complete | Every Phase 2.2 `UNKNOWN` has a matching export, owner, or explicit Drip-approved deferral. |
+| Sensitive data handled safely | Secrets, tokens, customer/order/payment data, and personal data are redacted or kept outside the repo. |
+| Sanitized findings reviewed | Drip and ChatGPT review the evidence summary before any staging, DNS, hosting, or production work. |
+| Phase 3 remains blocked | Dataset ingestion does not start from website evidence until Drip/ChatGPT approve the next prompt. |
+
 ## Phase 2.1 Acceptance
 
 This phase is complete when the plan is reviewed, the docs identify the temporary role for Squarespace, and Phase 3 remains blocked until ChatGPT/Drip review. It does not approve or perform production hosting, DNS, Squarespace, or app/API changes.
@@ -199,3 +224,7 @@ This phase is complete when the plan is reviewed, the docs identify the temporar
 ## Phase 2.2 Acceptance
 
 This phase is complete when the read-only current-state inventory is reviewed, unknown private export fields are clearly marked, required manual export steps are documented, and Phase 3 remains blocked until ChatGPT/Drip review. It does not approve or perform production hosting, DNS, Squarespace, website, form, redirect, Apps Script, or app/API changes.
+
+## Phase 2.3 Acceptance
+
+This phase is complete when the manual export checklist and private evidence handling policy are documented, every Phase 2.2 `UNKNOWN` category maps to a safe export step, and Phase 3 remains blocked until ChatGPT/Drip review. It does not approve or perform production hosting, DNS, Squarespace, website, form, redirect, Apps Script, Sheets, analytics, commerce, upload-service, ScreenCloud, or app/API changes.
