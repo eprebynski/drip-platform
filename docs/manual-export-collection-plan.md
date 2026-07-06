@@ -97,6 +97,32 @@ Phase 2.4 adds local-only scripts and documentation in `docs/private-evidence-au
 
 The default private evidence folder is `~/Documents/Drip/private-evidence`. The scripts refuse to use a target inside this repository. Raw exports still stay outside Git, and unverified fields still remain `UNKNOWN`.
 
+## Phase 2.5 Inbox Workflow
+
+Phase 2.5 adds a local-only inbox workflow for easier private evidence intake. Drip can place downloaded exports, screenshots, PDFs, CSVs, TXT files, markdown files, JSON files, and notes into `~/Documents/Drip/private-evidence/inbox`, then run an importer that classifies and copies files into the most likely evidence folder.
+
+| Command | Purpose |
+| --- | --- |
+| `npm run evidence:open` | Opens the private evidence root locally. |
+| `npm run evidence:open-inbox` | Opens the private inbox folder locally. |
+| `npm run evidence:import` | Copies inbox files into categorized private folders or `review-needed/`, deduplicates by hash, and writes an import manifest. |
+| `npm run evidence:status` | Writes a private status report showing inbox files, imported files, review-needed files, missing evidence categories, `UNKNOWN` summaries, and the recommended next local command. |
+
+Importer output remains private and outside the repo. It does not delete inbox originals by default, does not call external APIs, does not use live credentials, does not redact raw files automatically, and does not commit files. Low-confidence or unclassified evidence goes to `review-needed/` until a human reviews it.
+
+The recommended evidence collection workflow is:
+
+1. Run `npm run evidence:open-inbox`.
+2. Download or drag all private exports and screenshots into `inbox/`.
+3. Run `npm run evidence:import`.
+4. Run `npm run evidence:scan`.
+5. Review the private redaction report.
+6. Run `npm run evidence:status`.
+7. Fill sanitized summaries only.
+8. Keep raw files outside the repo.
+9. Keep `UNKNOWN` fields until verified.
+10. Do not start Phase 3 from raw imports or importer output alone.
+
 ## Codex Intake Rules
 
 | Situation | Codex behavior |
