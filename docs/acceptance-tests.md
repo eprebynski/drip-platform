@@ -7,7 +7,7 @@
 | 0 Audit/blueprint | All requested docs exist; source-verified inventory is added; uploaded repo ZIP is reviewed read-only; secret values are not exposed; deployed source parity gaps are marked; no production systems changed. |
 | 1 Foundation | Shared schemas validate required fields; lifecycle enum tests pass; jobRun and auditLog contracts exist; feature flags default off for production-impacting flows; dry-run guard blocks omitted/unauthorized writes; display provider adapters are stubs only. |
 | 1.5 Local service skeletons | Local services use shared contracts, mock repositories, dry-run guards, and feature flags OFF; all skeleton tests pass without credentials. |
-| 2 Admin Dashboard MVP | Admin can view System Health, Jobs & Errors, Human Review Queue, Codex Review Queue; status changes write audit logs. |
+| 2 Admin Dashboard MVP | Admin can view System Health, Jobs & Errors, Human Review Queue, Codex Review Queue, Feature Flags, Dataset Uploads, Market Intelligence, Display Placements, Billing Review, Backup & Restore, and Legacy Migration; local status changes remain in memory; no production systems changed. |
 | 3 Dataset ingestion/MI | Dataset upload validates schema; staging load succeeds; production load requires approval; recommendations include required scores and freshness warnings. |
 | 4 Daily automation | Jobs are idempotent; failed jobs create humanReviewTasks; activation cannot bypass safety/date/billing/placement/provider approval checks. |
 | 5 Display abstraction | DisplayProviderService contract tests pass; ScreenCloud dry-run produces expected diff; production sync requires approval. |
@@ -87,3 +87,17 @@ Every major workflow must expose status, last run, owner, errors, approval statu
 | Market recommendation draft | Recommendation includes source freshness warnings and placeholders. |
 | Daily orchestrator dry-run output | All local jobs return job logs with approvalRequired and rollbackNotes. |
 | Codex Review Queue item | Phase 1.5 review item validates and includes `copyForChatGPT`. |
+
+## Phase 2 Local Dashboard Tests
+
+| Test | Expected result |
+| --- | --- |
+| Dashboard data loading | Dashboard snapshot loads from mock repositories and local service skeletons. |
+| Codex Review Queue display shape | Review items expose phase, title, summary, files changed, risk level, production impact, tests, unresolved blockers, `copyForChatGPT`, and `promptBackToCodex`. |
+| `copyForChatGPT` required | Codex review item schema rejects items missing `copyForChatGPT`. |
+| `promptBackToCodex` local edit | Dashboard store can edit and retain `promptBackToCodex` in memory. |
+| Feature flags OFF | Every production-impacting feature flag remains false and dashboard enablement is locked. |
+| Dry-run status visible | Jobs, BigQuery load plans, display dry-run, billing preview, and backup summary expose dryRun status. |
+| Unresolved blockers visible | System Health and Legacy Migration show Apps Script parity, runtime order, live route usage, Secret Manager, approval owner, and BigQuery table-map blockers. |
+| No production credentials required | Dashboard declares no live credential requirements or environment variable dependencies. |
+| No production service calls | Dashboard policy marks Apps Script, Sheets, Firestore, BigQuery, Stripe, ScreenCloud, display provider, and deploy calls disabled. |

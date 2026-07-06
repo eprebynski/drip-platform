@@ -102,6 +102,26 @@ Every Codex task should produce a dashboard-readable review packet.
 | Feature flag list | Admin can view flag status and approval requirement. |
 | Audit trail | Status changes write auditLogs. |
 
+## Phase 2 Local MVP Implementation
+
+The Phase 2 MVP is implemented as a local-only dashboard package under `packages/dashboard`. It reads Phase 1.5 mock repositories and service skeletons only. It does not authenticate to or call Apps Script, Google Sheets, Firestore, BigQuery, Stripe, ScreenCloud, Cloud Run, or any display provider.
+
+| Module | Phase 2 local behavior |
+| --- | --- |
+| System Health | Shows `LOCAL_ONLY` mode, unresolved blockers, mock service health, latest dry-run daily automation status, failed job count, and review queue counts. |
+| Jobs & Errors | Shows local dry-run job output, warning text, rollback notes, approvalRequired, and a mock local error log. |
+| Human Review Queue | Shows mock tasks with reason, riskLevel, ownerRole, suggestedNextAction, and in-memory status changes. |
+| Codex Review Queue / Rebuild Control Center | Shows Phase 1.5 and Phase 2 review packets with phase, files changed, risk, production impact, tests, blockers, copyForChatGPT, promptBackToCodex, and in-memory status changes. |
+| Feature Flags | Shows all production-impacting flags as OFF and locked from dashboard enablement. |
+| Dataset Uploads | Shows local dataset metadata drafts, supported dataset types, and dry-run BigQuery load plan placeholders. |
+| Market Intelligence | Shows mock recommendation output, source freshness warnings, Google Search/search-interest placeholder, and payor dataset placeholder. |
+| Display Placements | Shows mock placements, display provider abstraction, and ScreenCloudAdapter as stub/dry-run only. |
+| Billing Review | Shows mock billing and invoice preview with approvalRequired and no Stripe access. |
+| Backup & Restore | Shows mock backup job status, local backup draft, and restore-test request draft without live backup or restore. |
+| Legacy Migration | Shows production cutover as blocked by Apps Script parity, runtime order, live route usage, Secret Manager, approval owners, and BigQuery table-map blockers. |
+
+Status changes in the Phase 2 MVP are stored only in the running local dashboard process. They are not persisted to production systems and are not treated as approvals for live work.
+
 ## RBAC
 
 | Role | Access |

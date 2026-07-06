@@ -36,6 +36,20 @@ Codex should produce reviewable, dashboard-readable rebuild work packets. No pro
 | Codex Review Queue generator | Added in `packages/services/src/codex-review.js`. |
 | Local tests | Added under `packages/services/test`. |
 
+## Phase 2 Admin Dashboard MVP Status
+
+| Item | Status |
+| --- | --- |
+| Branch name requested | `rebuild/phase-2-admin-dashboard-mvp`. |
+| Local dashboard app | Added under `packages/dashboard`. |
+| Dashboard modules | System Health, Jobs & Errors, Human Review Queue, Codex Review Queue, Feature Flags, Dataset Uploads, Market Intelligence, Display Placements, Billing Review, Backup & Restore, and Legacy Migration. |
+| Data sources | Phase 1.5 mock repositories and local service skeletons only. |
+| Review status changes | In-memory local dashboard store only. |
+| `copyForChatGPT` | Required and displayed for Codex Review Queue items. |
+| `promptBackToCodex` | Editable and stored locally. |
+| Production impact | None. No deploys, live credentials, Apps Script, Sheets, Firestore, BigQuery, Stripe, ScreenCloud, display-provider, campaign-state, or production-resource writes. |
+| Local tests | Added under `packages/dashboard/test`. |
+
 ## Task Packet Standard
 
 Every Codex task should include:
@@ -92,6 +106,22 @@ Tests or validation:
 Approvals needed:
 Open questions:
 Recommended next Codex prompt:
+```
+
+## Phase 2 Codex Review Queue Item
+
+```text
+Codex Review Queue Item
+Phase: Phase 2
+Title: Drip Admin Dashboard MVP with Codex Review Queue
+Summary: Local-only dashboard shell backed by Phase 1 shared contracts, Phase 1.5 mock services, in-memory review status updates, and no live credentials.
+Files changed: packages/dashboard, docs/admin-dashboard-spec.md, docs/codex-task-plan.md, docs/acceptance-tests.md, docs/risk-register.md, docs/phase-2-admin-dashboard-mvp.md
+Risk level: MEDIUM
+Production impact: None. No deploys, no live credentials, no Apps Script, Sheets, Firestore, BigQuery, Stripe, ScreenCloud, display-provider, or campaign-state writes.
+Tests or validation: Dashboard tests, shared/service tests, local app smoke check, and secret-pattern scan.
+Approvals needed: Drip review and ChatGPT review before Phase 3. Production approvals remain blocked by unresolved legacy/parity items.
+Open questions: Who owns approval decisions, and which deployed Apps Script/routes remain live?
+Recommended next Codex prompt: After Phase 2 review, implement Phase 3 dataset ingestion and market intelligence staging using local mocks first; keep production writes blocked.
 ```
 
 ## Approval Policy

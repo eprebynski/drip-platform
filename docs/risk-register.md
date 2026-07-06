@@ -22,6 +22,7 @@
 | R16 | `drip-segment-api` source can be deployed publicly while `POST /segments/create` writes BigQuery rows. | Critical | Medium | Unauthenticated callers could create segment records or expose provider lists if the source matches production. | Require IAM/auth/RBAC, rate limits, audit logs, and approval policy before production use. | Engineering/Security |
 | R17 | Phase 1 contracts could be mistaken for production-ready implementation. | Medium | Medium | Reviewers may assume schemas/stubs resolve live parity or approval-owner blockers. | Keep blockers explicit; require production-readiness review before implementation or deploy. | Drip Super Admin |
 | R18 | Phase 1.5 local skeletons could be mistaken for deployable services. | Medium | Medium | Mock handlers could be promoted before live IAM, source parity, approval owners, and secrets are ready. | Keep package local-only; require production implementation review and new approval before deployment work. | Engineering |
+| R19 | Phase 2 dashboard status changes could be mistaken for production approvals. | Medium | Medium | Local review state could be interpreted as authorization to connect live services or cut over legacy systems. | Label dashboard as local-only, keep status changes in memory, and require separate rebuildApprovals before production-connected work. | Drip Super Admin |
 
 ## Risky Production Items
 
@@ -37,6 +38,7 @@
 | Public Segment API routes | Can expose provider targeting data or persist segment records. | Auth/IAM review and write approval policy. |
 | Contract package changes | Can influence future implementation assumptions. | ChatGPT/Drip review before production coding. |
 | Local service skeletons | Can influence future service boundaries. | ChatGPT/Drip review before production-connected coding. |
+| Local dashboard review state | Can influence human workflow assumptions. | In-memory only; not a production approval source. |
 | Legacy code deletion | Can break hidden dependencies. | Zero dependency proof and explicit approval. |
 
 ## Open Risks Due To Evidence Gap
