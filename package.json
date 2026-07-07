@@ -14,7 +14,8 @@
     "evidence:import": "node ./scripts/import-private-evidence-inbox.js",
     "evidence:status": "node ./scripts/generate-private-evidence-status-report.js",
     "evidence:scan": "node ./scripts/scan-private-evidence-for-secrets.js",
-    "evidence:summary-stubs": "node ./scripts/generate-sanitized-summary-stubs.js"
+    "evidence:summary-stubs": "node ./scripts/generate-sanitized-summary-stubs.js",
+    "evidence:draft-summaries": "node ./scripts/draft-sanitized-evidence-summaries.js"
   },
   "engines": {
     "node": ">=18"
