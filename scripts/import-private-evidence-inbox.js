@@ -7,6 +7,7 @@ import {
   EVIDENCE_DESTINATION_FOLDERS,
   TEXT_SNIFF_EXTENSIONS,
   ensurePrivateEvidenceFolders,
+  isIgnoredEvidenceName,
   parseArgs,
   printHelp,
   writeTextFile
@@ -103,6 +104,9 @@ function walkFiles(dirPath, files = []) {
   }
   for (const entry of fs.readdirSync(dirPath, { withFileTypes: true })) {
     const fullPath = path.join(dirPath, entry.name);
+    if (isIgnoredEvidenceName(entry.name)) {
+      continue;
+    }
     if (entry.isDirectory()) {
       walkFiles(fullPath, files);
     } else if (entry.isFile()) {
@@ -128,9 +132,6 @@ async function buildDuplicateIndex(privateRoot) {
   for (const folder of foldersToCheck) {
     const folderPath = path.join(privateRoot, folder);
     for (const filePath of walkFiles(folderPath)) {
-      if (path.basename(filePath) === 'README.md') {
-        continue;
-      }
       const fileHash = await hashFile(filePath);
       if (!duplicateIndex.has(fileHash)) {
         duplicateIndex.set(fileHash, filePath);

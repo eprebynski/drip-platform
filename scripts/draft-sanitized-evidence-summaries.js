@@ -6,6 +6,7 @@ import {
   EVIDENCE_DESTINATION_FOLDERS,
   TEXT_SNIFF_EXTENSIONS,
   ensurePrivateEvidenceFolders,
+  isIgnoredEvidenceName,
   parseArgs,
   printHelp,
   writeTextFile
@@ -31,9 +32,7 @@ const CONFIDENCE_LEVELS = ['HIGH', 'MEDIUM', 'LOW', 'UNKNOWN'];
 const SOURCE_FOLDERS = [
   'inbox',
   ...EVIDENCE_DESTINATION_FOLDERS,
-  'review-needed',
-  'manifests',
-  'redaction-reports'
+  'review-needed'
 ];
 
 const CATEGORY_TERMS = {
@@ -116,6 +115,9 @@ function walkFiles(dirPath, files = [], skipped = []) {
   for (const entry of fs.readdirSync(dirPath, { withFileTypes: true })) {
     const fullPath = path.join(dirPath, entry.name);
     const relative = path.relative(options.root, fullPath);
+    if (isIgnoredEvidenceName(entry.name)) {
+      continue;
+    }
     if (entry.isDirectory()) {
       if (relative === 'sanitized-summaries') {
         skipped.push({ filePath: fullPath, reason: 'Existing summary output folder is not used as evidence.' });
@@ -127,11 +129,7 @@ function walkFiles(dirPath, files = [], skipped = []) {
       }
       walkFiles(fullPath, files, skipped);
     } else if (entry.isFile()) {
-      if (entry.name === 'README.md') {
-        skipped.push({ filePath: fullPath, reason: 'README file is not evidence.' });
-      } else {
-        files.push(fullPath);
-      }
+      files.push(fullPath);
     }
   }
   return files;
@@ -245,6 +243,15 @@ function parseRedactionReports(reportFiles) {
 
 function latestFile(files, prefix) {
   const matches = files.filter((filePath) => path.basename(filePath).startsWith(prefix));
+  if (matches.length === 0) {
+    return null;
+  }
+  matches.sort((a, b) => fs.statSync(b).mtimeMs - fs.statSync(a).mtimeMs);
+  return matches[0];
+}
+
+function latestFileMatching(files, predicate) {
+  const matches = files.filter((filePath) => predicate(path.basename(filePath), filePath));
   if (matches.length === 0) {
     return null;
   }
@@ -393,6 +400,15 @@ function warningRows(warnings) {
     .join('\n');
 }
 
+function warningCountRows(warnings, emptyMessage) {
+  if (warnings.length === 0) {
+    return `| NONE | HIGH | ${escapeMarkdown(emptyMessage)} |`;
+  }
+  return countsByPattern(warnings)
+    .map(([pattern, count]) => `| ${escapeMarkdown(pattern)} | HIGH | ${count} finding(s); values omitted. |`)
+    .join('\n');
+}
+
 function summaryContent(category, sources, generatedAt) {
   const warnings = uniqueWarnings(sources);
   const findings = findingRows(category, sources);
@@ -418,25 +434,55 @@ function manifestContent({
   sources,
   skipped,
   remainingUnknownRows,
-  redactionWarnings
+  latestRedactionReport,
+  historicalRedactionReportFiles,
+  latestRedactionWarnings,
+  historicalRedactionWarnings,
+  mappedRedactionWarnings
 }) {
   const summaryRows = draftedSummaries.map((summary) => `| ${summary.categoryId} | ${escapeMarkdown(summary.summaryPath)} | ${summary.sourceCount} | ${summary.remainingUnknownCount} |`).join('\n');
   const sourceRows = sources.map((source) => `| ${source.id} | ${source.evidenceType} | ${source.confidence} | ${source.safePath} | ${source.redactedCopyUsed} |`).join('\n');
   const skippedRows = skipped.map((entry) => `| ${safeRelativePath(entry.filePath)} | ${escapeMarkdown(entry.reason)} |`).join('\n');
   const unknownRows = remainingUnknownRows.map((row) => `| ${row.categoryId} | ${escapeMarkdown(row.unknown)} | UNKNOWN |`).join('\n');
-  const warningTableRows = redactionWarnings.length === 0
-    ? '| NONE | HIGH | No redaction warnings parsed from scanner reports. |'
-    : countsByPattern(redactionWarnings).map(([pattern, count]) => `| ${escapeMarkdown(pattern)} | HIGH | ${count} finding(s); values omitted. |`).join('\n');
+  const latestWarningRows = warningCountRows(latestRedactionWarnings, 'No warnings parsed from the latest redaction report.');
+  const historicalWarningRows = warningCountRows(historicalRedactionWarnings, 'No historical warnings parsed from older redaction reports.');
+  const mappedWarningRows = warningCountRows(mappedRedactionWarnings, 'No latest warnings mapped to sources used in current summaries.');
 
-  return `# Sanitized Evidence Summary Builder Manifest\n\n- Generated: ${generatedAt}\n- Evidence root: ${options.root}\n- Production impact: NONE\n- Phase 3 started: NO\n- External API calls: NO\n- Live credentials used: NO\n- Cookies used: NO\n- Admin consoles accessed: NO\n- Live systems pulled: NO\n- Raw private evidence committed: NO\n- Automatic promotion into repo docs: NO\n\n## Summaries Drafted\n\n| Category | Summary path | Source count | Remaining UNKNOWN count |\n| --- | --- | ---: | ---: |\n${summaryRows || '| NONE |  |  |  |'}\n\n## Source Files Used\n\n| Source ID | Evidence type | Confidence | Safe local path used | Redacted copy used |\n| --- | --- | --- | --- | --- |\n${sourceRows || '| NONE | UNKNOWN | UNKNOWN | NONE | NO |'}\n\n## Skipped Files\n\n| Safe local path | Reason |\n| --- | --- |\n${skippedRows || '| NONE |  |'}\n\n## Remaining UNKNOWNs\n\n| Category | Field | Status |\n| --- | --- | --- |\n${unknownRows || '| NONE |  |  |'}\n\n## Redaction Warnings\n\n| Pattern | Confidence | Notes |\n| --- | --- | --- |\n${warningTableRows}\n\n## Required Next Steps\n\n1. Review every drafted sanitized summary manually.\n2. Review redaction reports and redacted copies before sharing summaries.\n3. Keep raw evidence outside the repo.\n4. Keep unresolved fields marked UNKNOWN.\n5. Do not promote findings into repo docs until Drip/ChatGPT review.\n6. Do not start Phase 3 from this manifest.\n`;
+  return `# Sanitized Evidence Summary Builder Manifest\n\n- Generated: ${generatedAt}\n- Evidence root: ${options.root}\n- Production impact: NONE\n- Phase 3 started: NO\n- External API calls: NO\n- Live credentials used: NO\n- Cookies used: NO\n- Admin consoles accessed: NO\n- Live systems pulled: NO\n- Raw private evidence committed: NO\n- Automatic promotion into repo docs: NO\n- Latest redaction report used: ${latestRedactionReport ? safeRelativePath(latestRedactionReport) : 'NONE'}\n- Historical redaction reports counted: ${historicalRedactionReportFiles.length}\n- Latest redaction report warnings: ${latestRedactionWarnings.length}\n- Historical redaction report warnings: ${historicalRedactionWarnings.length}\n- Warnings mapped to current summary sources: ${mappedRedactionWarnings.length}\n\n## Summaries Drafted\n\n| Category | Summary path | Source count | Remaining UNKNOWN count |\n| --- | --- | ---: | ---: |\n${summaryRows || '| NONE |  |  |  |'}\n\n## Source Files Used\n\n| Source ID | Evidence type | Confidence | Safe local path used | Redacted copy used |\n| --- | --- | --- | --- | --- |\n${sourceRows || '| NONE | UNKNOWN | UNKNOWN | NONE | NO |'}\n\n## Skipped Files\n\n| Safe local path | Reason |\n| --- | --- |\n${skippedRows || '| NONE |  |'}\n\n## Remaining UNKNOWNs\n\n| Category | Field | Status |\n| --- | --- | --- |\n${unknownRows || '| NONE |  |  |'}\n\n## Latest Redaction Report Warnings\n\n| Pattern | Confidence | Notes |\n| --- | --- | --- |\n${latestWarningRows}\n\n## Historical Redaction Report Warnings\n\n| Pattern | Confidence | Notes |\n| --- | --- | --- |\n${historicalWarningRows}\n\n## Warnings Mapped To Current Summary Sources\n\n| Pattern | Confidence | Notes |\n| --- | --- | --- |\n${mappedWarningRows}\n\n## Required Next Steps\n\n1. Review every drafted sanitized summary manually.\n2. Review the latest redaction report and redacted copies before sharing summaries.\n3. Treat historical warning counts as context only, not current-scan totals.\n4. Keep raw evidence outside the repo.\n5. Keep unresolved fields marked UNKNOWN.\n6. Do not promote findings into repo docs until Drip/ChatGPT review.\n7. Do not start Phase 3 from this manifest.\n`;
 }
 
 const skippedFiles = [];
 const sourceRoots = SOURCE_FOLDERS.map((folder) => path.join(options.root, folder));
-const allFiles = sourceRoots.flatMap((sourceRoot) => walkFiles(sourceRoot, [], skippedFiles));
-const redactionReportFiles = allFiles.filter((filePath) => path.basename(filePath).startsWith('redaction-report-'));
-const latestStatusReport = latestFile(allFiles, 'private-evidence-status-');
-const latestImportManifest = latestFile(allFiles, 'private-evidence-import-');
+const evidenceFiles = sourceRoots.flatMap((sourceRoot) => walkFiles(sourceRoot, [], skippedFiles));
+const manifestFiles = walkFiles(path.join(options.root, 'manifests'), [], skippedFiles);
+const redactionReportFiles = walkFiles(path.join(options.root, 'redaction-reports'), [], skippedFiles)
+  .filter((filePath) => path.basename(filePath).startsWith('redaction-report-'));
+const latestStatusReport = latestFile(manifestFiles, 'private-evidence-status-');
+const latestImportManifest = latestFile(manifestFiles, 'private-evidence-import-');
+const latestPublicCollectionManifest = latestFileMatching(
+  manifestFiles,
+  (base) => base.includes('public-evidence-collection-manifest')
+);
+const selectedManifestFiles = [
+  latestStatusReport,
+  latestImportManifest,
+  latestPublicCollectionManifest
+].filter(Boolean);
+const selectedManifestPaths = new Set(selectedManifestFiles);
+for (const manifestFile of manifestFiles) {
+  const base = path.basename(manifestFile);
+  if (selectedManifestPaths.has(manifestFile)) {
+    continue;
+  }
+  const reason = base.startsWith('sanitized-summary-builder-')
+    ? 'Prior summary-builder manifest is not used as current evidence input.'
+    : 'Historical or template manifest is not used as current evidence input.';
+  skippedFiles.push({ filePath: manifestFile, reason });
+}
+
+const allFiles = [...new Set([...evidenceFiles, ...selectedManifestFiles])];
+const latestRedactionReport = latestFile(redactionReportFiles, 'redaction-report-');
+const historicalRedactionReportFiles = redactionReportFiles.filter((filePath) => filePath !== latestRedactionReport);
 const publicCollectionManifests = allFiles.filter((filePath) => path.basename(filePath).includes('public-evidence-collection-manifest'));
 
 if (!latestStatusReport) {
@@ -448,16 +494,24 @@ if (!latestImportManifest) {
 if (publicCollectionManifests.length === 0) {
   skippedFiles.push({ filePath: options.root, reason: 'No public evidence collection manifest found.' });
 }
+if (!latestRedactionReport) {
+  skippedFiles.push({ filePath: path.join(options.root, 'redaction-reports'), reason: 'No redaction report found.' });
+}
 
-const { findingsByFile, warningRows: parsedWarnings } = parseRedactionReports(redactionReportFiles);
+const { findingsByFile, warningRows: latestRedactionWarnings } = parseRedactionReports(latestRedactionReport ? [latestRedactionReport] : []);
+const { warningRows: historicalRedactionWarnings } = parseRedactionReports(historicalRedactionReportFiles);
 const sources = createSourceRecords(allFiles, findingsByFile, skippedFiles);
 const generatedAt = new Date().toISOString();
 const fileStamp = timestampForFile(new Date(generatedAt));
 const draftedSummaries = [];
 const remainingUnknownRows = [];
+const usedSourceIds = new Set();
 
 for (const category of EVIDENCE_CATEGORIES) {
   const categorySources = sources.filter((source) => categoryMatches(source, category));
+  for (const source of categorySources) {
+    usedSourceIds.add(source.id);
+  }
   const content = summaryContent(category, categorySources, generatedAt);
   const summaryPath = path.join(options.root, 'sanitized-summaries', `${category.id}-summary.md`);
   writeTextFile(summaryPath, content, { force: true });
@@ -473,6 +527,8 @@ for (const category of EVIDENCE_CATEGORIES) {
   });
 }
 
+const mappedRedactionWarnings = uniqueWarnings(sources.filter((source) => usedSourceIds.has(source.id)));
+
 const manifestPath = path.join(options.root, 'manifests', `sanitized-summary-builder-${fileStamp}.md`);
 writeTextFile(manifestPath, manifestContent({
   generatedAt,
@@ -480,11 +536,15 @@ writeTextFile(manifestPath, manifestContent({
   sources,
   skipped: skippedFiles,
   remainingUnknownRows,
-  redactionWarnings: parsedWarnings
+  latestRedactionReport,
+  historicalRedactionReportFiles,
+  latestRedactionWarnings,
+  historicalRedactionWarnings,
+  mappedRedactionWarnings
 }), { force: true });
 
 const unknownCount = remainingUnknownRows.length;
-const redactionWarningCount = parsedWarnings.length;
+const redactionWarningCount = latestRedactionWarnings.length;
 
 console.log(`Sanitized evidence summaries drafted: ${path.join(options.root, 'sanitized-summaries')}`);
 console.log(`Summaries drafted: ${draftedSummaries.length}`);
@@ -492,6 +552,8 @@ console.log(`Summary-builder manifest written: ${manifestPath}`);
 console.log(`Source files used: ${sources.length}`);
 console.log(`Skipped files: ${skippedFiles.length}`);
 console.log(`Remaining UNKNOWNs: ${unknownCount}`);
-console.log(`Redaction warnings: ${redactionWarningCount}`);
+console.log(`Latest redaction report warnings: ${redactionWarningCount}`);
+console.log(`Historical redaction report warnings: ${historicalRedactionWarnings.length}`);
+console.log(`Warnings mapped to current summary sources: ${mappedRedactionWarnings.length}`);
 console.log('Production impact: NONE');
 console.log('Phase 3 started: NO');

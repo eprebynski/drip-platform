@@ -4,6 +4,7 @@ import path from 'node:path';
 import {
   TEXT_SNIFF_EXTENSIONS,
   ensurePrivateEvidenceFolders,
+  isIgnoredEvidenceName,
   parseArgs,
   printHelp,
   writeTextFile
@@ -55,6 +56,9 @@ function walkFiles(dirPath, files = []) {
   for (const entry of fs.readdirSync(dirPath, { withFileTypes: true })) {
     const fullPath = path.join(dirPath, entry.name);
     const relative = path.relative(options.root, fullPath);
+    if (isIgnoredEvidenceName(entry.name)) {
+      continue;
+    }
     if (entry.isDirectory()) {
       if (relative === 'redaction-reports') {
         continue;
