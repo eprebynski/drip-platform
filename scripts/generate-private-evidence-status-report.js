@@ -4,6 +4,7 @@ import path from 'node:path';
 import {
   EVIDENCE_CATEGORIES,
   EVIDENCE_DESTINATION_FOLDERS,
+  REVIEW_PACKET_FILES,
   ensurePrivateEvidenceFolders,
   isIgnoredEvidenceName,
   parseArgs,
@@ -93,6 +94,31 @@ function summaryStatusRows() {
   });
 }
 
+function reviewPacketStatusRows() {
+  return REVIEW_PACKET_FILES.map((fileName) => {
+    const packetPath = path.join(options.root, 'review-packets', fileName);
+    if (!fs.existsSync(packetPath)) {
+      return {
+        fileName,
+        packetPath,
+        status: 'MISSING',
+        needsManualReview: false
+      };
+    }
+
+    const text = fs.readFileSync(packetPath, 'utf8');
+    const needsManualReview = /Manual review complete:\s*UNKNOWN/i.test(text)
+      || /NEEDS_MANUAL_REVIEW/i.test(text)
+      || /\bUNKNOWN\b/.test(text);
+    return {
+      fileName,
+      packetPath,
+      status: 'PRESENT',
+      needsManualReview
+    };
+  });
+}
+
 const inboxFiles = walkFiles(path.join(options.root, 'inbox'));
 const reviewFiles = walkFiles(path.join(options.root, 'review-needed'));
 const categoryFiles = EVIDENCE_DESTINATION_FOLDERS.map((folder) => ({
@@ -107,6 +133,9 @@ const draftedSummaries = summaryRows.filter((row) => row.status === 'DRAFTED_WIT
 const undraftedSummaries = summaryRows.filter((row) => row.status === 'UNDRAFTED_STUB');
 const summariesWithUnknowns = presentSummaries.filter((row) => row.hasUnknown);
 const summariesNeedingManualReview = presentSummaries.filter((row) => row.needsManualReview);
+const reviewPacketRows = reviewPacketStatusRows();
+const presentReviewPackets = reviewPacketRows.filter((row) => row.status === 'PRESENT');
+const reviewPacketsNeedingManualReview = presentReviewPackets.filter((row) => row.needsManualReview);
 const latestRedactionReport = latestFile(path.join(options.root, 'redaction-reports'), 'redaction-report-');
 const latestImportManifest = latestFile(path.join(options.root, 'manifests'), 'private-evidence-import-');
 const reportDate = new Date().toISOString();
@@ -123,6 +152,10 @@ if (inboxHasUnimportedChanges) {
   recommendedCommand = 'npm run evidence:scan';
 } else if (undraftedSummaries.length > 0 || presentSummaries.length < EVIDENCE_CATEGORIES.length) {
   recommendedCommand = 'npm run evidence:draft-summaries';
+} else if (presentReviewPackets.length < REVIEW_PACKET_FILES.length) {
+  recommendedCommand = 'npm run evidence:review-packets';
+} else if (reviewPacketsNeedingManualReview.length > 0) {
+  recommendedCommand = 'Review migration review packets manually';
 } else if (summariesNeedingManualReview.length > 0) {
   recommendedCommand = 'Review drafted summaries and redaction concerns manually';
 }
@@ -131,7 +164,10 @@ const categoryRows = categoryFiles.map((entry) => `| ${entry.folder} | ${entry.f
 const summaryStatusTable = summaryRows
   .map((row) => `| ${row.category.id} | ${row.status} | ${row.hasUnknown ? 'YES' : 'NO'} | ${row.needsManualReview ? 'YES' : 'NO'} | ${path.relative(options.root, row.summaryPath)} |`)
   .join('\n');
-const report = `# Private Evidence Status Report\n\n- Generated: ${reportDate}\n- Evidence root: ${options.root}\n- Production systems changed: NO\n- External APIs called: NO\n- Live credentials used: NO\n- Latest import manifest: ${latestImportManifest === 'NONE' ? 'NONE' : latestImportManifest}\n- Latest redaction report: ${latestRedactionReport === 'NONE' ? 'NONE' : latestRedactionReport}\n- Sanitized summary files present: ${presentSummaries.length}\n- Sanitized summaries drafted: ${draftedSummaries.length}\n- Summaries with intentional UNKNOWN fields: ${summariesWithUnknowns.length}\n- Summary files needing manual review: ${summariesNeedingManualReview.length}\n- Recommended next local command: ${recommendedCommand}\n\n## Inbox Files\n\n${relativeList(inboxFiles)}\n\n## Imported Files By Category\n\n| Category | File count |\n| --- | ---: |\n${categoryRows}\n\n## Files Needing Review\n\n${relativeList(reviewFiles)}\n\n## Categories With No Evidence Yet\n\n${missingCategories.length > 0 ? missingCategories.map((category) => `- ${category.id}: ${category.title}`).join('\n') : '- NONE'}\n\n## Sanitized Summary Status\n\n| Category | Status | Contains UNKNOWN | Needs manual review | Summary path |\n| --- | --- | --- | --- | --- |\n${summaryStatusTable}\n\n## Next Steps\n\n1. Run npm run evidence:import if inbox files remain.\n2. Run npm run evidence:scan before using any imported evidence.\n3. Review the redaction report.\n4. Run npm run evidence:draft-summaries when summary files are missing or still undrafted.\n5. Review drafted summaries and redaction concerns manually.\n6. Keep raw files outside the repo.\n7. Keep UNKNOWN fields until verified.\n8. Do not start Phase 3 from this status report.\n`;
+const reviewPacketStatusTable = reviewPacketRows
+  .map((row) => `| ${row.fileName} | ${row.status} | ${row.needsManualReview ? 'YES' : 'NO'} | ${path.relative(options.root, row.packetPath)} |`)
+  .join('\n');
+const report = `# Private Evidence Status Report\n\n- Generated: ${reportDate}\n- Evidence root: ${options.root}\n- Production systems changed: NO\n- External APIs called: NO\n- Live credentials used: NO\n- Latest import manifest: ${latestImportManifest === 'NONE' ? 'NONE' : latestImportManifest}\n- Latest redaction report: ${latestRedactionReport === 'NONE' ? 'NONE' : latestRedactionReport}\n- Sanitized summary files present: ${presentSummaries.length}\n- Sanitized summaries drafted: ${draftedSummaries.length}\n- Summaries with intentional UNKNOWN fields: ${summariesWithUnknowns.length}\n- Summary files needing manual review: ${summariesNeedingManualReview.length}\n- Review packets present: ${presentReviewPackets.length}\n- Review packets needing manual review: ${reviewPacketsNeedingManualReview.length}\n- Recommended next local command: ${recommendedCommand}\n\n## Inbox Files\n\n${relativeList(inboxFiles)}\n\n## Imported Files By Category\n\n| Category | File count |\n| --- | ---: |\n${categoryRows}\n\n## Files Needing Review\n\n${relativeList(reviewFiles)}\n\n## Categories With No Evidence Yet\n\n${missingCategories.length > 0 ? missingCategories.map((category) => `- ${category.id}: ${category.title}`).join('\n') : '- NONE'}\n\n## Sanitized Summary Status\n\n| Category | Status | Contains UNKNOWN | Needs manual review | Summary path |\n| --- | --- | --- | --- | --- |\n${summaryStatusTable}\n\n## Migration Review Packet Status\n\n| Packet | Status | Needs manual review | Packet path |\n| --- | --- | --- | --- |\n${reviewPacketStatusTable}\n\n## Next Steps\n\n1. Run npm run evidence:import if inbox files remain.\n2. Run npm run evidence:scan before using any imported evidence.\n3. Review the redaction report.\n4. Run npm run evidence:draft-summaries when summary files are missing or still undrafted.\n5. Run npm run evidence:review-packets when migration review packets are missing.\n6. Review drafted summaries, review packets, and redaction concerns manually.\n7. Keep raw files outside the repo.\n8. Keep UNKNOWN fields until verified.\n9. Do not start Phase 3 from this status report.\n`;
 
 const reportPath = path.join(options.root, 'manifests', `private-evidence-status-${reportStamp}.md`);
 writeTextFile(reportPath, report, { force: true });
@@ -144,4 +180,6 @@ console.log(`Sanitized summary files present: ${presentSummaries.length}`);
 console.log(`Sanitized summaries drafted: ${draftedSummaries.length}`);
 console.log(`Summaries with intentional UNKNOWN fields: ${summariesWithUnknowns.length}`);
 console.log(`Summary files needing manual review: ${summariesNeedingManualReview.length}`);
+console.log(`Review packets present: ${presentReviewPackets.length}`);
+console.log(`Review packets needing manual review: ${reviewPacketsNeedingManualReview.length}`);
 console.log(`Recommended next local command: ${recommendedCommand}`);

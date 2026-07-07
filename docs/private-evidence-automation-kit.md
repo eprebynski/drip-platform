@@ -31,9 +31,11 @@ Run these from the repo root.
 | `npm run evidence:collect-public` | Collects public/read-only website, DNS, and RDAP evidence into `inbox/`. |
 | `npm run evidence:collect-public:dry-run` | Exercises the collector without fetching public resources or performing DNS/RDAP lookups. |
 | `npm run evidence:import` | Classifies and copies files from `inbox/` into evidence folders or `review-needed/`, then writes an import manifest. |
-| `npm run evidence:status` | Writes a private status report showing inbox files, imported files, review-needed files, missing categories, UNKNOWN summaries, and the recommended next command. |
+| `npm run evidence:status` | Writes a private status report showing inbox files, imported files, review-needed files, missing categories, summary status, review-packet status, and the recommended next command. |
 | `npm run evidence:summary-stubs` | Creates blank sanitized-summary templates for each export category. |
 | `npm run evidence:scan` | Non-destructively scans private evidence text files and writes a redaction report. |
+| `npm run evidence:draft-summaries` | Drafts sanitized summary files from sanitized/private local evidence and redaction reports. |
+| `npm run evidence:review-packets` | Drafts local-only migration review packets from sanitized summaries and safe local evidence. |
 
 Each command supports:
 
@@ -81,6 +83,7 @@ The default is copy-only. `--move` removes an inbox original only after a succes
 | `redaction-reports/` | Redaction scanner reports and optional safe redacted copies. |
 | `manifests/` | Evidence manifest, import manifest, status report, and redaction checklist templates. |
 | `review-needed/` | Files the inbox importer could not classify confidently enough for an evidence folder. |
+| `review-packets/` | Local-only migration review packets for Drip/ChatGPT review. |
 
 ## Supported Evidence Categories
 
@@ -190,9 +193,31 @@ npm run evidence:status
 - files imported by category
 - files needing review
 - categories with no evidence yet
-- sanitized summary stubs still marked `UNKNOWN`
+- sanitized summary files present, drafted, and needing review
+- migration review packets present and needing review
 - latest redaction report path
 - recommended next local command
+
+## Migration Review Packets
+
+`npm run evidence:review-packets` writes six local-only packets under:
+
+```text
+~/Documents/Drip/private-evidence/review-packets
+```
+
+The packet builder reads sanitized summaries, selected manifests, safe redacted copies, and the sanitized Sheets audit file when present. It does not read from live systems, use credentials, call private APIs, or promote packet contents into repo docs.
+
+Generated packets:
+
+- `active-routes-review-packet.md`
+- `google-sheets-destinations-review-packet.md`
+- `apps-script-review-packet.md`
+- `squarespace-forms-review-packet.md`
+- `analytics-search-console-review-packet.md`
+- `migration-blockers-review-packet.md`
+
+Each packet keeps unresolved facts marked `UNKNOWN`, reports production impact as `NONE`, and keeps Phase 3 started as `NO`.
 
 ## Safe Workflow
 
@@ -203,10 +228,12 @@ npm run evidence:status
 5. Run `npm run evidence:import`.
 6. Run `npm run evidence:scan`.
 7. Review the redaction report in the private `redaction-reports/` folder.
-8. Run `npm run evidence:status` to see missing categories and remaining `UNKNOWN` summaries.
-9. Fill sanitized summary stubs only after evidence is reviewed and redacted.
-10. Keep any unverified field marked `UNKNOWN`.
-11. Commit only sanitized documentation after Drip/ChatGPT review.
+8. Run `npm run evidence:draft-summaries` to draft sanitized summaries.
+9. Run `npm run evidence:review-packets` to draft local migration review packets.
+10. Run `npm run evidence:status` to see missing categories, summary status, review-packet status, and remaining review needs.
+11. Review summaries and packets manually with Drip/ChatGPT.
+12. Keep any unverified field marked `UNKNOWN`.
+13. Commit only sanitized documentation after Drip/ChatGPT review.
 
 ## Git Safety
 

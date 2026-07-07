@@ -19,7 +19,8 @@ export const REQUIRED_FOLDERS = [
   'sanitized-summaries',
   'redaction-reports',
   'manifests',
-  'review-needed'
+  'review-needed',
+  'review-packets'
 ];
 
 export const EVIDENCE_DESTINATION_FOLDERS = [
@@ -32,6 +33,15 @@ export const EVIDENCE_DESTINATION_FOLDERS = [
   'upload-service',
   'screencloud',
   'active-routes'
+];
+
+export const REVIEW_PACKET_FILES = [
+  'active-routes-review-packet.md',
+  'google-sheets-destinations-review-packet.md',
+  'apps-script-review-packet.md',
+  'squarespace-forms-review-packet.md',
+  'analytics-search-console-review-packet.md',
+  'migration-blockers-review-packet.md'
 ];
 
 export const TEXT_SNIFF_EXTENSIONS = [
@@ -93,7 +103,8 @@ const FOLDER_PURPOSES = {
   'sanitized-summaries': 'Blank and reviewed sanitized summaries that may later inform repo docs after redaction review.',
   'redaction-reports': 'Non-destructive scanner reports and optional safe redacted copies generated from private evidence.',
   'manifests': 'Evidence manifests, redaction checklists, owner maps, import manifests, status reports, and export-tracking templates.',
-  'review-needed': 'Files that the inbox importer could not classify confidently enough for a destination evidence folder.'
+  'review-needed': 'Files that the inbox importer could not classify confidently enough for a destination evidence folder.',
+  'review-packets': 'Local-only sanitized migration review packets generated from sanitized summaries and safe evidence.'
 };
 
 export function getRepoRoot() {
@@ -195,5 +206,5 @@ export function redactionChecklist() {
 }
 
 export function printHelp(commandName) {
-  console.log(`${commandName}\n\nOptions:\n  --root <path>       Private evidence root. Default: ${DEFAULT_PRIVATE_EVIDENCE_DIR}\n  --force             Overwrite generated templates/readmes.\n  --move              Importer only: remove inbox original after a successful copy.\n  --folder <name>     Folder opener only: open a specific private evidence subfolder.\n  --safe-redact       Scanner only: write redacted copies under redaction-reports/redacted-copies.\n  --dry-run           Public collector only: skip public fetches and DNS/RDAP lookups.\n  --base-url <url>    Public collector only: base public site URL. Default: https://driphealthcare.com.\n  --domain <domain>   Public collector only: DNS/RDAP domain. Default: driphealthcare.com.\n\nSummary builder:\n  evidence:draft-summaries reads local evidence, prefers redacted copies, drafts sanitized summaries, and writes a manifest. It does not copy raw snippets or promote findings into repo docs.\n`);
+  console.log(`${commandName}\n\nOptions:\n  --root <path>       Private evidence root. Default: ${DEFAULT_PRIVATE_EVIDENCE_DIR}\n  --force             Overwrite generated templates/readmes.\n  --move              Importer only: remove inbox original after a successful copy.\n  --folder <name>     Folder opener only: open a specific private evidence subfolder.\n  --safe-redact       Scanner only: write redacted copies under redaction-reports/redacted-copies.\n  --dry-run           Public collector only: skip public fetches and DNS/RDAP lookups.\n  --base-url <url>    Public collector only: base public site URL. Default: https://driphealthcare.com.\n  --domain <domain>   Public collector only: DNS/RDAP domain. Default: driphealthcare.com.\n\nSummary builder:\n  evidence:draft-summaries reads local evidence, prefers redacted copies, drafts sanitized summaries, and writes a manifest. It does not copy raw snippets or promote findings into repo docs.\n\nReview packets:\n  evidence:review-packets reads sanitized summaries and safe local evidence, drafts human review packets, and keeps them local/private.\n`);
 }
