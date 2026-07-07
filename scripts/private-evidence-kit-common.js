@@ -51,6 +51,15 @@ export const TEXT_SNIFF_EXTENSIONS = [
   '.css'
 ];
 
+export function isIgnoredEvidenceName(name) {
+  const lowerName = name.toLowerCase();
+  return name.startsWith('.')
+    || lowerName === '.ds_store'
+    || lowerName === 'readme'
+    || lowerName === 'readme.md'
+    || lowerName === 'readme.txt';
+}
+
 export const EVIDENCE_CATEGORIES = [
   { id: 'squarespace-pages', title: 'Squarespace pages and page settings', folder: 'squarespace', blocksRetirement: 'YES', blocksPhase3: 'NO unless pages contain dataset intake dependencies' },
   { id: 'squarespace-forms', title: 'Squarespace forms, fields, destinations, notifications, storage, spam settings', folder: 'squarespace', blocksRetirement: 'YES', blocksPhase3: 'MAYBE if form outputs feed datasets or market-intelligence inputs' },
