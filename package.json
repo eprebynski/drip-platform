@@ -16,7 +16,7 @@
     "evidence:scan": "node ./scripts/scan-private-evidence-for-secrets.js",
     "evidence:summary-stubs": "node ./scripts/generate-sanitized-summary-stubs.js",
     "evidence:draft-summaries": "node ./scripts/draft-sanitized-evidence-summaries.js",
-    "evidence:review-packets": "node ./scripts/generate-sanitized-migration-review-packets.js"
+    "evidence:review-packets": "node ./scripts/generate-sanitized-migration-review-packets-clean.js"
   },
   "engines": {
     "node": ">=18"
