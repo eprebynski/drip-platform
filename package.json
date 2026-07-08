@@ -10,14 +10,15 @@
     "evidence:create-folders": "node ./scripts/create-private-evidence-folders.js",
     "evidence:create-templates": "node ./scripts/generate-private-evidence-templates.js",
     "evidence:create-apps-script-template": "node ./scripts/generate-apps-script-dependency-template.js",
+    "evidence:review-apps-script-dependencies": "node ./scripts/review-apps-script-dependencies.js",
     "evidence:collect-public": "node ./scripts/collect-public-website-evidence.js",
     "evidence:collect-public:dry-run": "node ./scripts/collect-public-website-evidence.js --dry-run",
     "evidence:import": "node ./scripts/import-private-evidence-inbox.js",
-    "evidence:status": "node ./scripts/generate-private-evidence-status-report-phase-212.js",
+    "evidence:status": "node ./scripts/generate-private-evidence-status-report-phase-213.js",
     "evidence:scan": "node ./scripts/scan-private-evidence-for-secrets.js",
     "evidence:summary-stubs": "node ./scripts/generate-sanitized-summary-stubs.js",
     "evidence:draft-summaries": "node ./scripts/draft-sanitized-evidence-summaries.js",
-    "evidence:review-packets": "node ./scripts/generate-sanitized-migration-review-packets-phase-212.js"
+    "evidence:review-packets": "node ./scripts/generate-sanitized-migration-review-packets-phase-213.js"
   },
   "engines": {
     "node": ">=18"
