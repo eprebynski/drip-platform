@@ -13,6 +13,10 @@ import {
   summaryTemplate,
   writeTextFile
 } from './private-evidence-kit-common.js';
+import {
+  APPS_SCRIPT_DEPENDENCY_TEMPLATE_RELATIVE_PATH,
+  appsScriptDependencyVerificationTemplate
+} from './apps-script-dependency-template.js';
 
 const options = parseArgs();
 
@@ -47,6 +51,9 @@ if (writeTextFile(path.join(options.root, 'manifests', 'evidence-manifest-templa
   written += 1;
 }
 if (writeTextFile(path.join(options.root, 'manifests', 'redaction-checklist.md'), redactionChecklist(), { force: options.force })) {
+  written += 1;
+}
+if (writeTextFile(path.join(options.root, APPS_SCRIPT_DEPENDENCY_TEMPLATE_RELATIVE_PATH), appsScriptDependencyVerificationTemplate(), { force: options.force })) {
   written += 1;
 }
 

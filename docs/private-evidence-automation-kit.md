@@ -2,7 +2,7 @@
 
 ## Scope
 
-Phase 2.4 adds local-only tooling for organizing private export evidence needed for Squarespace retirement and website migration planning. Phase 2.5 adds a local inbox workflow so Drip can place mixed exports/screenshots/PDFs/CSVs/TXT/Markdown/JSON/notes into one private folder, then classify and copy them into the right private evidence folders. Phase 2.6 adds a local public evidence collector that can prefill the private inbox with public/read-only website, DNS, and RDAP observations.
+Phase 2.4 adds local-only tooling for organizing private export evidence needed for Squarespace retirement and website migration planning. Phase 2.5 adds a local inbox workflow so Drip can place mixed exports/screenshots/PDFs/CSVs/TXT/Markdown/JSON/notes into one private folder, then classify and copy them into the right private evidence folders. Phase 2.6 adds a local public evidence collector that can prefill the private inbox with public/read-only website, DNS, and RDAP observations. Phase 2.12 adds a local Apps Script dependency verification template for manually mapping projects, deployments, modes, triggers, linked Sheets, callers, workflows, replacement targets, and cutover readiness.
 
 This kit does not deploy, modify DNS, modify Squarespace, edit website pages/forms/redirects, submit forms, modify Apps Script or triggers, write to live Google Sheets, Firestore, BigQuery, Stripe, ScreenCloud, create production resources, use live credentials, use browser cookies, connect to private APIs, access private admin consoles, pull private data from live systems, or start Phase 3 dataset ingestion.
 
@@ -27,7 +27,8 @@ Run these from the repo root.
 | `npm run evidence:open` | Opens the private evidence root folder locally. |
 | `npm run evidence:open-inbox` | Opens the private `inbox/` folder locally. |
 | `npm run evidence:create-folders` | Creates the private folder structure and README files. |
-| `npm run evidence:create-templates` | Creates folders, README files, summary stubs, manifest template, and redaction checklist. |
+| `npm run evidence:create-templates` | Creates folders, README files, summary stubs, manifest template, redaction checklist, and the Apps Script dependency verification template. |
+| `npm run evidence:create-apps-script-template` | Creates or refreshes only the local/private Apps Script dependency verification template. |
 | `npm run evidence:collect-public` | Collects public/read-only website, DNS, and RDAP evidence into `inbox/`. |
 | `npm run evidence:collect-public:dry-run` | Exercises the collector without fetching public resources or performing DNS/RDAP lookups. |
 | `npm run evidence:import` | Classifies and copies files from `inbox/` into evidence folders or `review-needed/`, then writes an import manifest. |
@@ -84,6 +85,18 @@ The default is copy-only. `--move` removes an inbox original only after a succes
 | `manifests/` | Evidence manifest, import manifest, status report, and redaction checklist templates. |
 | `review-needed/` | Files the inbox importer could not classify confidently enough for an evidence folder. |
 | `review-packets/` | Local-only migration review packets for Drip/ChatGPT review. |
+
+## Apps Script Dependency Template
+
+`npm run evidence:create-apps-script-template` writes:
+
+```text
+~/Documents/Drip/private-evidence/apps-script/apps-script-dependency-verification-template.md
+```
+
+The template is a manual verification aid only. It captures Apps Script projects, web app deployments, doGet/doPost modes, triggers, linked Sheets, public callers, workflows, replacement targets, migration dispositions, and cutover readiness. It does not prove production behavior, does not authorize Apps Script replacement, does not change live Sheets, and does not unblock Phase 3 by itself.
+
+Keep all raw Apps Script exports, deployment URLs, AKfy-style identifiers, project IDs when sensitive, linked Sheet IDs when sensitive, screenshots, tokens, cookies, customer data, payment data, raw form responses, and private exports outside the repo. Preserve UNKNOWN until sanitized evidence verifies a field.
 
 ## Supported Evidence Categories
 
@@ -195,6 +208,7 @@ npm run evidence:status
 - categories with no evidence yet
 - sanitized summary files present, drafted, and needing review
 - migration review packets present and needing review
+- Apps Script dependency verification template present
 - latest redaction report path
 - recommended next local command
 
@@ -228,12 +242,13 @@ Each packet keeps unresolved facts marked `UNKNOWN`, reports production impact a
 5. Run `npm run evidence:import`.
 6. Run `npm run evidence:scan`.
 7. Review the redaction report in the private `redaction-reports/` folder.
-8. Run `npm run evidence:draft-summaries` to draft sanitized summaries.
-9. Run `npm run evidence:review-packets` to draft local migration review packets.
-10. Run `npm run evidence:status` to see missing categories, summary status, review-packet status, and remaining review needs.
-11. Review summaries and packets manually with Drip/ChatGPT.
-12. Keep any unverified field marked `UNKNOWN`.
-13. Commit only sanitized documentation after Drip/ChatGPT review.
+8. Complete the Apps Script dependency verification template from sanitized evidence only when Apps Script dependencies are under review.
+9. Run `npm run evidence:draft-summaries` to draft sanitized summaries.
+10. Run `npm run evidence:review-packets` to draft local migration review packets.
+11. Run `npm run evidence:status` to see missing categories, summary status, review-packet status, template presence, and remaining review needs.
+12. Review summaries and packets manually with Drip/ChatGPT.
+13. Keep any unverified field marked `UNKNOWN`.
+14. Commit only sanitized documentation after Drip/ChatGPT review.
 
 ## Git Safety
 
