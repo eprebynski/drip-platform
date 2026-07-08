@@ -29,6 +29,10 @@ const SOURCE_GROUPS = [
   ['MANIFEST', 'manifests', false],
   ['MANUAL_TEMPLATE', APPS_SCRIPT_DEPENDENCY_TEMPLATE_RELATIVE_PATH, false]
 ];
+const GOOGLE_SHEETS_PACKET_RELATIVE_PATH = path.join(
+  'review-packets',
+  'google-sheets-destinations-review-packet.md'
+);
 const WORKFLOW_DATA = [
   ['Provider signup', 'provider\\s+(?:signup|sign-up|intake|registration)', 'Provider intake and account onboarding', 'Auth/user service', 'REBUILD_IN_CLOUD_RUN', 'Sheet 1: Provider Intake'],
   ['Advertiser/vendor/employer signup', '(?:advertiser|vendor|employer)\\s+(?:signup|sign-up|intake|registration)', 'Advertiser and partner intake', 'API route', 'REBUILD_IN_CLOUD_RUN', 'Sheet 2: Advertiser Intake'],
@@ -51,17 +55,20 @@ const WORKFLOWS = WORKFLOW_DATA.map(([name, pattern, role, target, disposition, 
   name, pattern: new RegExp(pattern, 'i'), role, target, disposition, sheet
 }));
 const SHEET_DATA = [
-  ['Legacy Archive: Old Sheet 1 Campaigns', 'old\\s+sheet\\s+1|legacy\\s+archive', 'Legacy campaign archive; archive/retire only'],
-  ['Sheet 1', 'sheet\\s+1|provider\\s+intake', 'Provider intake'],
-  ['Sheet 2', 'sheet\\s+2|advertiser\\s+intake', 'Advertiser intake'],
-  ['Sheet 3', 'sheet\\s+3|provider\\s+display\\s+preferences?', 'Provider display preferences'],
-  ['Sheet 4', 'sheet\\s+4|provider\\s+campaigns?', 'Provider campaigns'],
-  ['Sheet 5', 'sheet\\s+5|conference\\s+campaigns?', 'Conference campaigns'],
-  ['Sheet 6', 'sheet\\s+6|patient\\s+campaigns?', 'Patient campaigns']
+  [1, 'current\\s+sheet\\s+1|old\\s+sheet\\s+1|legacy\\s+archive', 'Legacy campaign archive; archive/retire only', 'Legacy Archive: Old Sheet 1 Campaigns'],
+  [2, 'current\\s+sheet\\s+2|provider\\s+intake', 'Provider intake', 'Sheet 1: Provider Intake'],
+  [3, 'current\\s+sheet\\s+3|advertiser\\s+intake', 'Advertiser intake', 'Sheet 2: Advertiser Intake'],
+  [4, 'current\\s+sheet\\s+4|provider\\s+display\\s+preferences?', 'Provider display preferences', 'Sheet 3: Provider Display Preferences'],
+  [5, 'current\\s+sheet\\s+5|provider\\s+campaigns?', 'Provider campaigns', 'Sheet 4: Provider Campaigns'],
+  [6, 'current\\s+sheet\\s+6|conference\\s+campaigns?', 'Conference campaigns', 'Sheet 5: Conference Campaigns'],
+  [7, 'current\\s+sheet\\s+7|patient\\s+campaigns?', 'Patient campaigns', 'Sheet 6: Patient Campaigns']
 ];
-const SHEETS = SHEET_DATA.map(([label, pattern, role]) => ({
-  label, pattern: new RegExp(`\\b(?:${pattern})\\b`, 'i'), role,
-  logical: label === 'Legacy Archive: Old Sheet 1 Campaigns' ? label : `${label}: ${role.replace(/\b\w/g, (letter) => letter.toUpperCase())}`
+const SHEETS = SHEET_DATA.map(([number, pattern, role, logical]) => ({
+  number,
+  label: `Current Sheet ${number}`,
+  pattern: new RegExp(`\\b(?:${pattern})\\b`, 'i'),
+  role,
+  logical
 }));
 const SAFE_EXTENSIONS = new Set(TEXT_SNIFF_EXTENSIONS);
 const SAFE_ROUTE_WORDS = new Set('ad ads admin advertiser advertisers api app campaign campaigns cart center conference conferences contact employer employers form forms go intake legacy media old patient patients preview provider providers qr redirect redirects showcase signup submit upload vendor vendors'.split(' '));
@@ -109,6 +116,93 @@ function loadSources() {
   });
 }
 
+function parseMarkdownRow(line) {
+  const cells = [];
+  let cell = '';
+  for (let index = 0; index < line.length; index += 1) {
+    const character = line[index];
+    if (character === '\\' && line[index + 1] === '|') {
+      cell += '|';
+      index += 1;
+    } else if (character === '|') {
+      cells.push(cell.trim());
+      cell = '';
+    } else {
+      cell += character;
+    }
+  }
+  cells.push(cell.trim());
+  if (cells[0] === '') cells.shift();
+  if (cells.at(-1) === '') cells.pop();
+  return cells;
+}
+
+function safePacketCell(value, maxLength = 180) {
+  const scrubbed = scrubAppsScriptSensitiveValue(value)
+    .replace(/https?:\/\/\S+/gi, '[REDACTED_URL]')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return (scrubbed || 'UNKNOWN').slice(0, maxLength);
+}
+
+function isKnownPacketCell(value) {
+  return value && !/^(?:UNKNOWN|NONE|N\/A)$/i.test(value.trim());
+}
+
+function loadSanitizedSheetPromotion() {
+  const packetPath = path.join(options.root, GOOGLE_SHEETS_PACKET_RELATIVE_PATH);
+  const promotion = {
+    found: fs.existsSync(packetPath),
+    packetPath,
+    rows: new Map(),
+    fieldsPromoted: new Set()
+  };
+  if (!promotion.found) return promotion;
+
+  const packet = fs.readFileSync(packetPath, 'utf8');
+  const start = packet.indexOf('## Current Evidence Table');
+  const end = packet.indexOf('## Future Logical Sheet Model', start);
+  if (start === -1 || end === -1) return promotion;
+
+  for (const line of packet.slice(start, end).split(/\r?\n/)) {
+    if (!line.trim().startsWith('|') || /^\|\s*(?:---|Current source)/i.test(line)) continue;
+    const cells = parseMarkdownRow(line);
+    if (cells.length !== 7) continue;
+    const currentSource = safePacketCell(cells[0]);
+    const numberMatch = currentSource.match(/\bCurrent Sheet\s*(\d+)\b/i);
+    if (!numberMatch) continue;
+    const number = Number(numberMatch[1]);
+    if (number < 1 || number > 7) continue;
+    promotion.fieldsPromoted.add('current source');
+
+    const spreadsheetIdKnown = isKnownPacketCell(cells[1]);
+    const tabsKnown = isKnownPacketCell(cells[2]);
+    const roleKnown = isKnownPacketCell(cells[3]);
+    const evidenceKnown = isKnownPacketCell(cells[4]);
+    const dispositionKnown = isKnownPacketCell(cells[5]);
+    if (spreadsheetIdKnown) promotion.fieldsPromoted.add('spreadsheet ID status');
+    if (tabsKnown) promotion.fieldsPromoted.add('tabs');
+    if (roleKnown) promotion.fieldsPromoted.add('current role');
+    if (evidenceKnown) promotion.fieldsPromoted.add('evidence status');
+    if (dispositionKnown) promotion.fieldsPromoted.add('next-generation disposition');
+
+    promotion.rows.set(number, {
+      currentSource,
+      idStatus: spreadsheetIdKnown ? 'PRESENT_IN_SANITIZED_PACKET' : 'UNKNOWN',
+      tabs: tabsKnown ? `REFERENCED_IN_SANITIZED_PACKET: ${safePacketCell(cells[2], 120)}` : 'UNKNOWN',
+      currentRole: roleKnown ? `SANITIZED_PACKET_ROLE: ${safePacketCell(cells[3], 120)}` : 'UNKNOWN',
+      evidenceStatus: evidenceKnown ? 'PARTIAL_SANITIZED_EVIDENCE' : 'UNKNOWN',
+      disposition: number === 1
+        ? 'ARCHIVE_RETIRE_ONLY (SANITIZED_PACKET)'
+        : dispositionKnown
+          ? `SANITIZED_PACKET_DISPOSITION: ${safePacketCell(cells[5], 140)}`
+          : 'UNKNOWN',
+      stillUnknown: isKnownPacketCell(cells[6]) ? safePacketCell(cells[6], 160) : 'UNKNOWN'
+    });
+  }
+  return promotion;
+}
+
 function isUsableEvidence(source) {
   if (source.type === 'REDACTED_COPY') return true;
   if (source.type !== 'SANITIZED_SUMMARY') return false;
@@ -150,19 +244,27 @@ function workflowRows(sources) {
   });
 }
 
-function sheetRows(sources) {
+function sheetRows(sources, promotion) {
   return SHEETS.map((sheet) => {
     const related = matches(sources, sheet.pattern);
     const combined = related.map((source) => source.text).join(' ');
     const appsRelated = related.filter((source) => hasAppsScript(source.text));
-    const idStatus = /spreadsheet\s+id.{0,40}(?:verified|confirmed|redacted|present)/i.test(combined) ? 'PRESENT_BUT_REDACTED' : 'UNKNOWN';
+    const promoted = promotion.rows.get(sheet.number);
+    const fallbackIdStatus = /spreadsheet\s+id.{0,40}(?:verified|confirmed|redacted|present)/i.test(combined)
+      ? 'PRESENT_IN_SANITIZED_SUMMARY'
+      : 'UNKNOWN';
     return {
-      ...sheet, idStatus,
-      tabs: /\b(?:known\s+)?tabs?\b.{0,80}(?:verified|confirmed|redacted|present)/i.test(combined) ? 'REFERENCED_IN_SANITIZED_EVIDENCE' : 'UNKNOWN',
-      currentRole: related.length ? `${sheet.role} signal in sanitized evidence` : 'UNKNOWN',
+      ...sheet,
+      displaySource: promoted?.currentSource || sheet.label,
+      idStatus: promoted?.idStatus || fallbackIdStatus,
+      tabs: promoted?.tabs || (/\b(?:known\s+)?tabs?\b.{0,80}(?:verified|confirmed|redacted|present)/i.test(combined) ? 'REFERENCED_IN_SANITIZED_SUMMARY' : 'UNKNOWN'),
+      currentRole: promoted?.currentRole || (related.length ? `${sheet.role} signal in sanitized summary` : 'UNKNOWN'),
+      evidenceStatus: promoted?.evidenceStatus || 'UNKNOWN',
+      disposition: promoted?.disposition || (sheet.number === 1 ? 'ARCHIVE_RETIRE_ONLY' : 'UNKNOWN'),
+      packetStillUnknown: promoted?.stillUnknown || 'UNKNOWN',
       appsSignal: appsRelated.length ? `${appsRelated.length} Apps Script-associated source signal(s)` : 'UNKNOWN',
-      blocker: idStatus === 'UNKNOWN' || !appsRelated.length ? 'YES - verify before Phase 3' : 'REVIEW_REQUIRED',
-      confidence: confidence(related)
+      blocker: !appsRelated.length ? 'YES - Apps Script behavior remains UNKNOWN' : 'REVIEW_REQUIRED',
+      confidence: promoted ? 'MEDIUM' : confidence(related)
     };
   });
 }
@@ -241,11 +343,15 @@ function knownStatus(sources, label, accepted) {
   return sources.some((source) => new RegExp(`${escaped}.{0,100}${accepted}`, 'i').test(source.text));
 }
 
-function assessGate(allSources, workflows, sheets) {
+function assessGate(allSources, workflows, sheets, modes, routes) {
   const blockers = [];
   if (workflows.some((workflow) => workflow.signal === 'UNKNOWN' || workflow.linkedSheet === 'UNKNOWN')) blockers.push('Dataset, form, route, billing, display, or review workflow dependencies remain UNKNOWN.');
   if (!knownStatus(allSources, 'Live mode usage', '(?:VERIFIED|CONFIRMED|NONE)')) blockers.push('Live mode usage remains UNKNOWN.');
-  if (sheets.some((sheet) => sheet.label !== 'Legacy Archive: Old Sheet 1 Campaigns' && sheet.idStatus === 'UNKNOWN')) blockers.push('Linked Sheet IDs remain UNKNOWN for active workflow candidates.');
+  if (sheets.some((sheet) => sheet.number !== 1 && sheet.idStatus === 'UNKNOWN')) blockers.push('Linked Sheet IDs remain UNKNOWN for active workflow candidates.');
+  if (!modes.length || !knownStatus(allSources, 'Active Apps Script handlers', '(?:VERIFIED|CONFIRMED|MAPPED)')) blockers.push('Active Apps Script handlers remain UNKNOWN.');
+  if (!knownStatus(allSources, 'Workflow-to-handler mapping', '(?:VERIFIED|CONFIRMED|MAPPED)')) blockers.push('Workflow-to-handler mapping remains UNKNOWN.');
+  if (!knownStatus(allSources, 'Workflow-to-Sheet read/write behavior', '(?:VERIFIED|CONFIRMED|MAPPED)')) blockers.push('Workflow-to-Sheet read/write behavior remains UNKNOWN.');
+  if (!routes.length || !knownStatus(allSources, 'Production caller map', '(?:VERIFIED|CONFIRMED|MAPPED)')) blockers.push('Production caller map remains UNKNOWN.');
   if (!knownStatus(allSources, 'Cutover owner', '(?:VERIFIED|CONFIRMED|ASSIGNED)')) blockers.push('Cutover owner remains UNKNOWN.');
   if (!knownStatus(allSources, 'Rollback path', '(?:VERIFIED|CONFIRMED|DOCUMENTED|YES)')) blockers.push('Rollback path remains UNKNOWN.');
   if (blockers.length) return ['PHASE_3_BLOCKED', blockers];
@@ -259,19 +365,20 @@ function tableRows(items, formatter, columns) {
 
 function buildReport(allSources) {
   const sources = allSources.filter(isUsableEvidence);
+  const promotion = loadSanitizedSheetPromotion();
   const workflows = workflowRows(sources);
-  const sheets = sheetRows(sources);
+  const sheets = sheetRows(sources, promotion);
   const modes = modeRows(sources);
   const triggers = triggerRows(sources);
   const routes = routeRows(sources);
-  const [gate, blockers] = assessGate(allSources, workflows, sheets);
+  const [gate, blockers] = assessGate(allSources, workflows, sheets, modes, routes);
   const sourceTypes = [...new Set(allSources.map((source) => source.type))].sort();
   const signaled = workflows.filter((workflow) => workflow.signal !== 'UNKNOWN');
   const confidenceLevel = !sources.length || !signaled.length ? 'LOW' : new Set(sources.map((source) => source.type)).size >= 2 ? 'MEDIUM' : 'LOW';
   const relativeHome = path.relative(os.homedir(), options.root);
   const displayedRoot = relativeHome && !relativeHome.startsWith('..') ? path.join('~', relativeHome) : options.root;
   const workflowTable = workflows.map((item) => `| ${escapeMarkdown(item.name)} | ${escapeMarkdown(item.signal)} | ${escapeMarkdown(item.linkedSheet)} | ${escapeMarkdown(item.role)} | ${escapeMarkdown(item.target)} | ${item.disposition} | ${escapeMarkdown(item.blocker)} | ${item.confidence} | ${escapeMarkdown(item.unknown)} | Co-occurrence is a review signal, not proof. |`).join('\n');
-  const sheetTable = sheets.map((item) => `| ${escapeMarkdown(item.label)} | ${item.idStatus} | ${item.tabs} | ${escapeMarkdown(item.currentRole)} | ${escapeMarkdown(item.appsSignal)} | ${escapeMarkdown(item.logical)} | ${escapeMarkdown(item.blocker)} | ${item.confidence} | Exact active spreadsheet, tabs, handlers, owner, and rollback remain UNKNOWN. |`).join('\n');
+  const sheetTable = sheets.map((item) => `| ${escapeMarkdown(item.displaySource)} | ${item.idStatus} | ${escapeMarkdown(item.tabs)} | ${escapeMarkdown(item.currentRole)} | ${item.evidenceStatus} | ${escapeMarkdown(item.appsSignal)} | ${escapeMarkdown(item.disposition)} | ${escapeMarkdown(item.logical)} | ${escapeMarkdown(item.blocker)} | ${item.confidence} | ${escapeMarkdown(item.packetStillUnknown)}; active handler, live caller, owner, runtime usage, rollback, and cutover owner remain UNKNOWN. |`).join('\n');
   const modeTable = tableRows(modes, ([candidate, type, workflow]) => `| ${escapeMarkdown(candidate)} | ${type} | ${escapeMarkdown(workflow)} | UNKNOWN | LOW | ${type === 'FUNCTION_CANDIDATE' ? 'UNKNOWN' : 'REBUILD_IN_CLOUD_RUN'} | Live usage, handler, linked Sheet, owner, and rollback remain UNKNOWN. |`, 7);
   const triggerTable = tableRows(triggers, ([candidate, event, workflow, itemConfidence, disposition]) => `| ${escapeMarkdown(candidate)} | ${escapeMarkdown(event)} | ${escapeMarkdown(workflow)} | ${itemConfidence} | ${disposition} | Active schedule, function, owner, and linked Sheet remain UNKNOWN. |`, 6);
   const routeTable = tableRows(routes, (item) => `| ${escapeMarkdown(item.route)} | ${item.appsScript ? 'POSSIBLE - sanitized source also contains Apps Script signals' : 'UNKNOWN'} | ${escapeMarkdown(inferWorkflow(item.route))} | ${escapeMarkdown(replacementForRoute(item.route))} | ${/campaign|qr|conference|billing|submit|form|intake|signup/i.test(item.route) ? 'HIGH' : 'MEDIUM'} | ${item.types.size >= 2 ? 'MEDIUM' : 'LOW'} | Live caller, handler, traffic, owner, and rollback remain UNKNOWN. |`, 7);
@@ -302,6 +409,16 @@ This report uses local sanitized evidence only and does not query or verify a li
 - Phase 3 may proceed only with exclusions: ${gate === 'PHASE_3_CAN_PROCEED_WITH_EXCLUSIONS' ? 'MAYBE after Drip/ChatGPT approval.' : 'NO under the current gate.'}
 - Workflows appearing most dependent on Apps Script: ${signaled.slice(0, 6).map((item) => escapeMarkdown(item.name)).join(', ') || 'UNKNOWN'}.
 
+## Sanitized Sheet Evidence Promotion
+
+- Google Sheets review packet found: ${promotion.found ? 'YES' : 'NO'}
+- Current Sheet evidence rows parsed: ${promotion.rows.size}
+- Fields promoted into the Current Sheet Dependency Map: ${promotion.fieldsPromoted.size ? [...promotion.fieldsPromoted].join(', ') : 'NONE'}
+- Evidence label: SANITIZED_PACKET_EVIDENCE_ONLY
+- Live production proof: NO
+
+Promoted values describe current sanitized review evidence only. They do not prove Apps Script handlers, live callers, production runtime behavior, owners, read/write behavior, rollback, cutover readiness, or migration approval.
+
 ## Apps Script Dependency Inventory
 
 | Dependency/workflow | Evidence-backed current Apps Script signal | Linked current Sheet, if safely known | Current role | Future replacement target | Migration disposition | Phase 3 blocker | Confidence | Still UNKNOWN | Notes |
@@ -311,11 +428,11 @@ ${workflowTable}
 
 ## Current Sheet Dependency Map
 
-| Current Sheet | Safely known spreadsheet ID status | Safely known tabs | Current role from sanitized evidence | Apps Script dependency signal | Future logical area | Phase 3 blocker | Confidence | Still UNKNOWN |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Current Sheet | Safely known spreadsheet ID status | Safely known tabs | Current role from sanitized evidence | Current evidence status | Apps Script dependency signal | Sanitized packet disposition | Future logical area | Phase 3 blocker | Confidence | Still UNKNOWN |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 ${sheetTable}
 
-Old Sheet 1 remains archive/retire only. Current Sheet numbers do not define the future architecture, and no Sheet is renamed or modified.
+Current Sheet evidence is current sanitized evidence only. The future logical area is a separate planning model. Old Sheet 1 remains archive/retire only, Google Sheets remain temporary bridges, current Sheet numbers do not define the future architecture, and no Sheet is renamed or modified.
 
 ## Apps Script Mode / Handler Candidates
 
