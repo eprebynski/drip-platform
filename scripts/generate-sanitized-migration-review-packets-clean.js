@@ -65,6 +65,76 @@ const SAFE_ROUTE_SOURCE_PATHS = [
   path.join(options.root, 'redaction-reports', 'redacted-copies', 'squarespace'),
   path.join(options.root, 'redaction-reports', 'redacted-copies', 'analytics-search-console')
 ];
+const GOOGLE_SHEETS_PACKET = path.join(options.root, 'review-packets', 'google-sheets-destinations-review-packet.md');
+const APPS_SCRIPT_PACKET = path.join(options.root, 'review-packets', 'apps-script-review-packet.md');
+const SHEETS_AUDIT_PATH = path.join(options.root, 'sheets', 'google-sheets-evidence-from-audit.md');
+const APPS_SCRIPT_SOURCE_PATHS = [
+  path.join(options.root, 'sanitized-summaries', 'apps-script-deployments-summary.md'),
+  path.join(options.root, 'sanitized-summaries', 'apps-script-modes-summary.md'),
+  path.join(options.root, 'sanitized-summaries', 'google-sheets-destinations-summary.md'),
+  path.join(options.root, 'sanitized-summaries', 'active-routes-summary.md'),
+  path.join(options.root, 'redaction-reports', 'redacted-copies', 'apps-script'),
+  path.join(options.root, 'redaction-reports', 'redacted-copies', 'sheets'),
+  path.join(options.root, 'redaction-reports', 'redacted-copies', 'active-routes')
+];
+const FUTURE_LOGICAL_SHEET_MODEL = [
+  {
+    label: 'Legacy Archive: Old Sheet 1 Campaigns',
+    purpose: 'Historical campaign, click, billing, and redirect reference.',
+    disposition: 'RETIRE_ARCHIVE_ONLY',
+    targets: 'Optional historical BigQuery import; not an active future campaign model.',
+    phase3: 'OPTIONAL - only if approved for historical import.',
+    notes: 'Do not rebuild old Sheet 1 campaigns as active Firestore campaign operations.'
+  },
+  {
+    label: 'Sheet 1: Provider Intake',
+    purpose: 'Provider organization signup, facility onboarding, provider user creation, affiliate/referral link generation, and welcome workflow.',
+    disposition: 'FUTURE_LOGICAL_MODEL',
+    targets: 'organizations, providerOrganizations, providerFacilities, users, organizationMemberships, providerUserAffiliateLinks',
+    phase3: 'MAYBE - if provider intake feeds dataset or operations migration.',
+    notes: 'Logical future model only; do not physically rename live Sheets in this phase.'
+  },
+  {
+    label: 'Sheet 2: Advertiser Intake',
+    purpose: 'Vendor/employer signup, advertiser organization profile, billing bridge, promo/invoice bridge during migration.',
+    disposition: 'FUTURE_LOGICAL_MODEL',
+    targets: 'organizations, advertiserOrganizations, advertiserProfiles, billingAccounts, billingEvents, invoiceEvents, promoCodes',
+    phase3: 'MAYBE - if advertiser intake feeds dataset or billing migration.',
+    notes: 'Logical future model only; do not physically rename live Sheets in this phase.'
+  },
+  {
+    label: 'Sheet 3: Provider Display Preferences',
+    purpose: 'Provider users set display preferences for vendors/employers; applies only to Patient Campaign display eligibility.',
+    disposition: 'FUTURE_LOGICAL_MODEL',
+    targets: 'providerDisplayPreferences, providerUserPreferenceSignals, displayPreferenceChangeEvents',
+    phase3: 'YES - if patient campaign display eligibility depends on current preference data.',
+    notes: 'Use display preference wording. Avoid provider approval or endorsement wording.'
+  },
+  {
+    label: 'Sheet 4: Provider Campaigns',
+    purpose: 'Campaigns shown only to provider organization users inside the Provider Media Center.',
+    disposition: 'FUTURE_LOGICAL_MODEL',
+    targets: 'campaigns, campaignCreatives, campaignAudienceTargets, campaignEvents, billingEvents',
+    phase3: 'MAYBE - if provider campaign history or targeting data is imported.',
+    notes: 'Provider Campaigns are not shown to patients and are not displayed on provider screens.'
+  },
+  {
+    label: 'Sheet 5: Conference Campaigns',
+    purpose: 'Conference inventory, sponsorship reservations, holds, waitlists, purchase log, funding status, refund review, and showcase pages.',
+    disposition: 'FUTURE_LOGICAL_MODEL',
+    targets: 'conferenceEvents, conferenceSponsorshipInventory, conferenceReservations, conferenceWaitlistEntries, conferencePurchaseEvents, campaigns, billingEvents',
+    phase3: 'MAYBE - if conference inventory or purchase records become dataset inputs.',
+    notes: 'Conference Campaigns are separate from Patient Campaigns and Provider Campaigns.'
+  },
+  {
+    label: 'Sheet 6: Patient Campaigns',
+    purpose: 'Campaigns shown only to patients on provider screens using QR, video, or QR plus video.',
+    disposition: 'FUTURE_LOGICAL_MODEL',
+    targets: 'campaigns, campaignCreatives, campaignPlacements, campaignPlacementEligibility, patientScreenQrScanEvents, patientScreenPlaybackEvents, billingEvents, providerRevenueShareEvents',
+    phase3: 'YES - if patient campaign data feeds display eligibility, billing, or revenue share.',
+    notes: 'Requires provider display preference eligibility, Drip safety review, dates, assets, billing, active screens, and no compliance block.'
+  }
+];
 
 function isTextFile(filePath) {
   return TEXT_SNIFF_EXTENSIONS.includes(path.extname(filePath).toLowerCase());
@@ -258,8 +328,322 @@ function routeRationale(classification) {
   return 'Route candidate found, but migration intent is not verified.';
 }
 
+function scrubSensitiveValue(value) {
+  return String(value || '')
+    .replace(/-----BEGIN [A-Z ]*PRIVATE KEY-----[\s\S]+?-----END [A-Z ]*PRIVATE KEY-----/g, '[REDACTED_PRIVATE_KEY]')
+    .replace(/\b(?:sk|pk)_(?:live|test)_[A-Za-z0-9]{16,}\b/g, '[REDACTED_STRIPE_KEY]')
+    .replace(new RegExp('\\bwh' + 'sec_[A-Za-z0-9]{16,}\\b', 'g'), '[REDACTED_WEBHOOK_SECRET]')
+    .replace(/\bAIza[0-9A-Za-z_-]{35}\b/g, '[REDACTED_GOOGLE_API_KEY]')
+    .replace(/https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec\b/g, '[REDACTED_APPS_SCRIPT_URL]')
+    .replace(/\bAKfy[A-Za-z0-9_-]{20,}\b/g, '[REDACTED_APPS_SCRIPT_TOKEN]')
+    .replace(/\bBearer\s+[A-Za-z0-9._~+/=-]{12,}\b/gi, 'Bearer [REDACTED_TOKEN]')
+    .replace(/\bya29\.[0-9A-Za-z_-]+\b/g, '[REDACTED_OAUTH_TOKEN]')
+    .replace(/[\u0000-\u001f\u007f]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 function escapeMarkdown(value) {
-  return String(value || 'UNKNOWN').replace(/\|/g, '\\|');
+  return (scrubSensitiveValue(value) || 'UNKNOWN').replace(/\|/g, '\\|');
+}
+
+function firstMatch(text, regexes) {
+  for (const regex of regexes) {
+    const match = text.match(regex);
+    if (match && match[1]) {
+      return scrubSensitiveValue(match[1]).slice(0, 120) || 'UNKNOWN';
+    }
+  }
+  return 'UNKNOWN';
+}
+
+function linesForSheet(text, number) {
+  const lines = text.split(/\r?\n/);
+  const start = lines.findIndex((line) => new RegExp(`\\bSheet\\s*${number}\\b`, 'i').test(line));
+  if (start === -1) {
+    return '';
+  }
+  const end = lines.findIndex((line, index) => index > start && /\bSheet\s*\d+\b/i.test(line));
+  return lines.slice(start, end === -1 ? lines.length : end).join('\n');
+}
+
+function inferSheetRole(block) {
+  const lower = block.toLowerCase();
+  if (lower.includes('form')) {
+    return 'Form/intake destination';
+  }
+  if (lower.includes('campaign') || lower.includes('qr')) {
+    return 'Campaign or route operations';
+  }
+  if (lower.includes('upload')) {
+    return 'Upload workflow dependency';
+  }
+  if (lower.includes('billing') || lower.includes('stripe') || lower.includes('payment')) {
+    return 'Billing review dependency';
+  }
+  if (lower.includes('provider') || lower.includes('media')) {
+    return 'Provider/media workflow dependency';
+  }
+  return block ? 'Legacy operational data source' : 'UNKNOWN';
+}
+
+function extractSheetEvidence(sheetsText, number) {
+  const block = linesForSheet(sheetsText, number);
+  if (!block) {
+    return {
+      source: `Current Sheet ${number}`,
+      spreadsheetId: 'UNKNOWN',
+      tabs: 'UNKNOWN',
+      currentRole: 'UNKNOWN',
+      evidenceStatus: 'UNKNOWN',
+      stillUnknown: 'Sheet ID, tabs, owner, role, live dependency status'
+    };
+  }
+
+  const name = firstMatch(block, [
+    new RegExp(`Sheet\\s*${number}\\s*[:|-]\\s*([^\\n|]+)`, 'i'),
+    /\bSheet name\s*[:|-]\s*([^\n|]+)/i,
+    /\bName\s*[:|-]\s*([^\n|]+)/i
+  ]);
+  const spreadsheetId = firstMatch(block, [
+    /\/spreadsheets\/d\/([A-Za-z0-9_-]{12,})/i,
+    /\bSpreadsheet ID\s*[:|-]\s*([A-Za-z0-9_-]{12,})/i,
+    /\bSheet ID\s*[:|-]\s*([A-Za-z0-9_-]{12,})/i
+  ]);
+  const tabs = firstMatch(block, [
+    /\bTabs?\s*[:|-]\s*([^\n]+)/i,
+    /\bWorksheets?\s*[:|-]\s*([^\n]+)/i
+  ]);
+
+  return {
+    source: name === 'UNKNOWN' ? `Current Sheet ${number}` : `Current Sheet ${number}: ${name}`,
+    spreadsheetId,
+    tabs,
+    currentRole: inferSheetRole(block),
+    evidenceStatus: 'PARTIAL',
+    stillUnknown: 'Owner, active tabs, live form destinations, Apps Script dependencies, cutover disposition'
+  };
+}
+
+function currentSheetEvidenceRows(sheetsText) {
+  const rows = [];
+  for (let number = 1; number <= 7; number += 1) {
+    const evidence = extractSheetEvidence(sheetsText, number);
+    const disposition = number === 1
+      ? 'Legacy/archive review only; not a future active campaign model.'
+      : 'Current evidence only; future logical model is listed separately.';
+    rows.push(`| ${escapeMarkdown(evidence.source)} | ${escapeMarkdown(evidence.spreadsheetId)} | ${escapeMarkdown(evidence.tabs)} | ${escapeMarkdown(evidence.currentRole)} | ${evidence.evidenceStatus} | ${escapeMarkdown(disposition)} | ${escapeMarkdown(evidence.stillUnknown)} |`);
+  }
+  return rows.join('\n');
+}
+
+function futureLogicalSheetRows() {
+  return FUTURE_LOGICAL_SHEET_MODEL
+    .map((item) => `| ${escapeMarkdown(item.label)} | ${escapeMarkdown(item.purpose)} | ${escapeMarkdown(item.disposition)} | ${escapeMarkdown(item.targets)} | ${escapeMarkdown(item.phase3)} | ${escapeMarkdown(item.notes)} |`)
+    .join('\n');
+}
+
+function replacePacketBodySection(packet, startHeading, endHeading, replacement) {
+  const start = packet.indexOf(startHeading);
+  const end = packet.indexOf(endHeading, start);
+  if (start === -1 || end === -1) {
+    throw new Error(`Packet is missing expected section markers: ${startHeading}`);
+  }
+  return `${packet.slice(0, start)}${replacement}${packet.slice(end)}`;
+}
+
+function insertSafeFinding(packet, finding, evidenceType, confidence, notes) {
+  if (packet.includes(finding)) {
+    return packet;
+  }
+  const row = `| ${escapeMarkdown(finding)} | ${evidenceType} | ${confidence} | ${escapeMarkdown(notes)} |`;
+  const header = '| --- | --- | --- | --- |';
+  const index = packet.indexOf(header);
+  if (index === -1) {
+    return packet;
+  }
+  return `${packet.slice(0, index + header.length)}\n${row}${packet.slice(index + header.length)}`;
+}
+
+function cleanGoogleSheetsPacket(packetPath) {
+  if (!fs.existsSync(packetPath)) {
+    throw new Error(`Google Sheets review packet was not generated: ${packetPath}`);
+  }
+
+  const sheetsText = fs.existsSync(SHEETS_AUDIT_PATH) ? readPreview(SHEETS_AUDIT_PATH) : '';
+  const packet = fs.readFileSync(packetPath, 'utf8');
+  const replacement = `## Actionable Migration Questions\n\n- Which Sheets are still active form, Apps Script, campaign, media, billing, or market-intelligence dependencies?\n- Which current Sheet IDs, tabs, owners, and destinations are verified by sanitized evidence?\n- Which future logical Sheet areas map to app/API intake, Firestore collections, BigQuery tables, or event streams?\n- Which Sheets block Phase 3 because they are current dataset or automation sources?\n- Which Sheets can be retired after replacement intake flows are approved?\n\n## Current Evidence Table\n\nThis table describes current sanitized evidence only. It must not be read as the future data model. If a current Sheet ID, tab list, or role cannot be safely extracted from sanitized evidence, it remains UNKNOWN.\n\n| Current source | Safely extracted spreadsheet ID | Safely extracted tabs | Current role from evidence | Evidence status | Next-generation disposition | Still UNKNOWN |\n| --- | --- | --- | --- | --- | --- | --- |\n${currentSheetEvidenceRows(sheetsText)}\n\n## Future Logical Sheet Model\n\nThis table is a planning model only. Do not physically rename live Sheets in this phase. Google Sheets remain temporary bridges during migration and should not define the permanent architecture.\n\n| Future logical area | Purpose | Disposition | Future targets | Phase 3 blocker status | Notes |\n| --- | --- | --- | --- | --- | --- |\n${futureLogicalSheetRows()}\n\n`;
+  const withFinding = insertSafeFinding(
+    packet,
+    'Old Sheet 1 campaigns are legacy/archive only in the next-generation design.',
+    'DESIGN_DECISION',
+    'HIGH',
+    'Old Sheet 1 should not be migrated as an active future campaign model.'
+  );
+  const updated = replacePacketBodySection(withFinding, '## Actionable Migration Questions', '## Production Dependencies', replacement);
+  fs.writeFileSync(packetPath, updated, 'utf8');
+  console.log('Google Sheets review packet cleanup applied: separated current evidence from the future logical Sheet model.');
+}
+
+function addInventoryItem(items, seen, item) {
+  const candidate = scrubSensitiveValue(item.candidate).slice(0, 120) || 'UNKNOWN';
+  const key = `${item.area}|${candidate}`;
+  if (seen.has(key)) {
+    return;
+  }
+  seen.add(key);
+  items.push({
+    area: item.area,
+    candidate,
+    operationalSignal: item.operationalSignal || operationalSignalFor(candidate),
+    linkedSheetOrRoute: item.linkedSheetOrRoute || linkedSheetOrRouteFor(candidate),
+    confidence: item.confidence || 'LOW',
+    stillUnknown: item.stillUnknown || 'Source version, live caller, runtime behavior, owner, and cutover disposition'
+  });
+}
+
+function operationalSignalFor(candidate) {
+  const lower = candidate.toLowerCase();
+  if (/redirect|route|landing|url/.test(lower)) {
+    return 'Redirect/routing candidate';
+  }
+  if (/campaign|qr|ad|creative/.test(lower)) {
+    return 'Campaign-related candidate';
+  }
+  if (/billing|invoice|stripe|payment|promo/.test(lower)) {
+    return 'Billing/invoice candidate';
+  }
+  if (/screencloud|screen cloud|playback|display/.test(lower)) {
+    return 'Screen/display candidate';
+  }
+  if (/provider|facility|media/.test(lower)) {
+    return 'Provider/media candidate';
+  }
+  if (/conference|showcase|sponsor/.test(lower)) {
+    return 'Conference candidate';
+  }
+  if (/sheet|spreadsheet/.test(lower)) {
+    return 'Linked Sheet candidate';
+  }
+  if (/trigger|scheduled|clock/.test(lower)) {
+    return 'Trigger candidate';
+  }
+  if (/doget|dopost|web app|mode=/.test(lower)) {
+    return 'Web app mode or handler candidate';
+  }
+  return 'UNKNOWN';
+}
+
+function linkedSheetOrRouteFor(candidate) {
+  const sheetMatch = candidate.match(/\b(?:sheet|spreadsheet)(?:\s+id)?\s*[=:]\s*([A-Za-z0-9_-]{8,})/i);
+  if (sheetMatch) {
+    return `Sheet candidate: ${sheetMatch[1]}`;
+  }
+  const routeMatch = candidate.match(/\/[A-Za-z0-9][A-Za-z0-9._~:/?#\[\]@!$&'()*+,;=%-]{0,120}/);
+  return routeMatch ? `Route candidate: ${routeMatch[0].split(/[?#]/)[0]}` : 'UNKNOWN';
+}
+
+function collectAppsScriptEvidenceText() {
+  return APPS_SCRIPT_SOURCE_PATHS
+    .flatMap((sourcePath) => walkFiles(sourcePath))
+    .map((sourceFile) => readPreview(sourceFile))
+    .join('\n\n');
+}
+
+function extractAppsScriptInventory(text) {
+  const items = [];
+  const seen = new Set();
+  const add = (item) => addInventoryItem(items, seen, item);
+
+  const modeRegexes = [
+    /\bmode\s*[=:]\s*([A-Za-z0-9_-]{2,80})/gi,
+    /["']mode["']\s*:\s*["']([A-Za-z0-9_-]{2,80})["']/gi
+  ];
+  for (const regex of modeRegexes) {
+    let match;
+    while ((match = regex.exec(text)) !== null) {
+      add({ area: 'Web app mode', candidate: `mode=${match[1]}`, confidence: 'LOW' });
+    }
+  }
+
+  const handlerRegex = /\bfunction\s+(doGet|doPost|[A-Za-z0-9_]*(?:Handler|Route|Mode|Trigger)[A-Za-z0-9_]*)\s*\(/gi;
+  let handlerMatch;
+  while ((handlerMatch = handlerRegex.exec(text)) !== null) {
+    add({ area: 'doGet/doPost route or handler', candidate: handlerMatch[1], confidence: /^(doGet|doPost)$/i.test(handlerMatch[1]) ? 'MEDIUM' : 'LOW' });
+  }
+  if (/\bdoGet\b/i.test(text)) {
+    add({ area: 'doGet/doPost route or handler', candidate: 'doGet', confidence: 'MEDIUM' });
+  }
+  if (/\bdoPost\b/i.test(text)) {
+    add({ area: 'doGet/doPost route or handler', candidate: 'doPost', confidence: 'MEDIUM' });
+  }
+
+  const triggerRegexes = [
+    /\btrigger(?:\s+name)?\s*[:=-]\s*([^\n|]{2,80})/gi,
+    /ScriptApp\.newTrigger\(["']?([A-Za-z0-9_ -]{2,80})["']?\)/gi
+  ];
+  for (const regex of triggerRegexes) {
+    let match;
+    while ((match = regex.exec(text)) !== null) {
+      add({ area: 'Trigger name', candidate: match[1], confidence: 'LOW' });
+    }
+  }
+
+  const linkedSheetRegexes = [
+    /\/spreadsheets\/d\/([A-Za-z0-9_-]{12,})/gi,
+    /\b(?:Spreadsheet ID|Sheet ID)\s*[:=-]\s*([A-Za-z0-9_-]{12,})/gi
+  ];
+  for (const regex of linkedSheetRegexes) {
+    let match;
+    while ((match = regex.exec(text)) !== null) {
+      add({
+        area: 'Likely linked Sheet',
+        candidate: `Spreadsheet ID=${match[1]}`,
+        operationalSignal: 'Linked Sheet candidate',
+        linkedSheetOrRoute: `Sheet candidate: ${match[1]}`,
+        confidence: 'LOW',
+        stillUnknown: 'Exact tab, caller mode, owner, write/read behavior, and Phase 3 impact'
+      });
+    }
+  }
+
+  const routeRegex = /\b(?:route|path|redirect)\s*[:=-]\s*(\/[A-Za-z0-9._~:/?#\[\]@!$&'()*+,;=%-]{1,120})/gi;
+  let routeMatch;
+  while ((routeMatch = routeRegex.exec(text)) !== null) {
+    const route = routeMatch[1].split(/[?#]/)[0];
+    add({
+      area: 'Route or redirect mode',
+      candidate: route,
+      operationalSignal: 'Redirect/routing candidate',
+      linkedSheetOrRoute: `Route candidate: ${route}`,
+      confidence: 'LOW'
+    });
+  }
+
+  return items.slice(0, 30);
+}
+
+function appsScriptInventoryRows(text) {
+  const items = extractAppsScriptInventory(text);
+  if (items.length === 0) {
+    return '| UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | Apps Script deployment export and source/mode map required. |';
+  }
+  return items
+    .map((item) => `| ${escapeMarkdown(item.area)} | ${escapeMarkdown(item.candidate)} | ${escapeMarkdown(item.operationalSignal)} | ${escapeMarkdown(item.linkedSheetOrRoute)} | ${escapeMarkdown(item.confidence)} | ${escapeMarkdown(item.stillUnknown)} |`)
+    .join('\n');
+}
+
+function cleanAppsScriptPacket(packetPath) {
+  if (!fs.existsSync(packetPath)) {
+    throw new Error(`Apps Script review packet was not generated: ${packetPath}`);
+  }
+
+  const evidenceText = collectAppsScriptEvidenceText();
+  const packet = fs.readFileSync(packetPath, 'utf8');
+  const replacement = `## Actionable Migration Questions\n\n- Which Apps Script deployments are currently called by public website pages, forms, redirects, or upload flows?\n- Which web app modes, doGet/doPost handlers, triggers, linked Sheets, redirects, campaign paths, billing paths, ScreenCloud/playback paths, provider paths, or conference paths are verified by sanitized evidence?\n- Which modes must be rebuilt in the future API layer before Squarespace retirement?\n- Which scripts should be kept temporarily only for rollback?\n- Which linked Sheets or routes block Phase 3?\n\n## Sanitized Apps Script Evidence Inventory\n\nThis table is extracted from sanitized summaries, redacted copies, and manifests only. It is not proof of production behavior. If a mode, trigger, linked Sheet, route, source version, or live caller cannot be safely identified, it remains UNKNOWN.\n\n| Evidence area | Candidate from sanitized evidence | Operational signal | Linked Sheet or route | Confidence | Still UNKNOWN |\n| --- | --- | --- | --- | --- | --- |\n${appsScriptInventoryRows(evidenceText)}\n\n`;
+  const updated = replacePacketBodySection(packet, '## Actionable Migration Questions', '## Production Dependencies', replacement);
+  fs.writeFileSync(packetPath, updated, 'utf8');
+  console.log('Apps Script review packet cleanup applied: added sanitized evidence inventory without production behavior claims.');
 }
 
 function splitMarkdownRow(row) {
@@ -382,6 +766,8 @@ function cleanActiveRoutesPacket(packetPath) {
 
 try {
   cleanActiveRoutesPacket(ACTIVE_ROUTES_PACKET);
+  cleanGoogleSheetsPacket(GOOGLE_SHEETS_PACKET);
+  cleanAppsScriptPacket(APPS_SCRIPT_PACKET);
 } catch (error) {
   console.error(`Error: ${error.message}`);
   process.exit(1);
