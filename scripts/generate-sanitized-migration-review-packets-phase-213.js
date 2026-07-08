@@ -50,12 +50,13 @@ The auto-review report is a local/private review aid generated from sanitized ev
 | Auto-review report present | ${reportPresent ? 'YES' : 'NO'} |
 | Report path | ${relativeReportPath} |
 | Safely parsed gate result | ${gateResult} |
+| Sanitized Sheet evidence promotion | ENABLED WHEN GOOGLE SHEETS PACKET IS PRESENT |
 | Raw report copied into this packet | NO |
 | Raw private evidence committed | NO |
 | Production impact | NONE |
 | Phase 3 started | NO |
 
-UNKNOWN fields remain blockers unless they are supported by sanitized evidence and reviewed. Keep the report and this packet local/private.
+The auto-review report may promote sanitized current-Sheet fields from the Google Sheets review packet. Promotion is not live production proof and does not establish Apps Script handlers, callers, read/write behavior, ownership, rollback, or cutover readiness. UNKNOWN fields remain blockers unless they are supported by sanitized evidence and reviewed. Keep the report and this packet local/private.
 
 `;
 
