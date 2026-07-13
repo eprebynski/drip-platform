@@ -10,6 +10,11 @@ export const APPS_SCRIPT_RELATIONSHIP_VERIFICATION_PACKET_RELATIVE_PATH = path.j
   'apps-script-relationship-verification-packet.md'
 );
 
+export const APPS_SCRIPT_WORKFLOW_REVIEW_GUIDANCE_RELATIVE_PATH = path.join(
+  'apps-script',
+  'apps-script-workflow-review-guidance.md'
+);
+
 export const APPS_SCRIPT_GATE_RESULTS = new Set([
   'PHASE_3_BLOCKED',
   'PHASE_3_CAN_PROCEED_WITH_EXCLUSIONS',
