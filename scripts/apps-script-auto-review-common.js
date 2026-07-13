@@ -5,6 +5,11 @@ export const APPS_SCRIPT_AUTO_REVIEW_REPORT_RELATIVE_PATH = path.join(
   'apps-script-dependency-auto-review-report.md'
 );
 
+export const APPS_SCRIPT_RELATIONSHIP_VERIFICATION_PACKET_RELATIVE_PATH = path.join(
+  'apps-script',
+  'apps-script-relationship-verification-packet.md'
+);
+
 export const APPS_SCRIPT_GATE_RESULTS = new Set([
   'PHASE_3_BLOCKED',
   'PHASE_3_CAN_PROCEED_WITH_EXCLUSIONS',
