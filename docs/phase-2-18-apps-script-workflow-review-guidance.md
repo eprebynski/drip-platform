@@ -30,6 +30,18 @@ The generated guidance ranks:
 
 Higher-risk route words such as conference, campaign, submit, billing, purchase, and redirect increase priority.
 
+The default top-priority manual review order is:
+
+1. Conference Campaigns
+2. Patient Campaigns
+3. Provider Campaigns
+4. ScreenCloud/display provider operations
+5. Provider display preferences
+
+Provider Campaigns and Provider display preferences are distinct review areas. Provider Campaigns are advertiser campaigns shown to provider organization users in the Provider Media Center. Provider display preferences are provider-side preference signals used for patient campaign display eligibility.
+
+Provider Campaigns are included in the top-priority list because they may affect provider-facing campaign review and display workflows, not because they are production-confirmed. They still default to `UNKNOWN` and `EXCLUDE_FROM_PHASE_3_DRY_RUN` unless sanitized evidence supports a reviewer decision.
+
 ## Why Conference Campaigns First
 
 Conference Campaigns is the first deep-dive because the Phase 2.16 and Phase 2.17 private outputs show candidate routes for conference campaign behavior, including preview and submit-style paths. Those routes could affect public campaign or conference workflows, so they should be reviewed before signal-only or no-signal workflows.
