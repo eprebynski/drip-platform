@@ -44,6 +44,7 @@ const WORKFLOWS = [
 const PRIORITY_WORKFLOWS = [
   'Conference Campaigns',
   'Patient Campaigns',
+  'Provider Campaigns',
   'ScreenCloud/display provider operations',
   'Provider display preferences'
 ];
