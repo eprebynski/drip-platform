@@ -54,21 +54,30 @@ const WORKFLOW_DATA = [
 const WORKFLOWS = WORKFLOW_DATA.map(([name, pattern, role, target, disposition, sheet]) => ({
   name, pattern: new RegExp(pattern, 'i'), role, target, disposition, sheet
 }));
+const CURRENT_TO_FUTURE_SHEET_MAP = new Map([
+  [1, 'Legacy Archive: Old Sheet 1 Campaigns'],
+  [2, 'Sheet 2: Advertiser Intake'],
+  [3, 'Sheet 3: Provider Display Preferences'],
+  [4, 'Sheet 1: Provider Intake'],
+  [5, 'Sheet 4: Provider Campaigns'],
+  [6, 'Sheet 6: Patient Campaigns'],
+  [7, 'Sheet 5: Conference Campaigns']
+]);
 const SHEET_DATA = [
-  [1, 'current\\s+sheet\\s+1|old\\s+sheet\\s+1|legacy\\s+archive', 'Legacy campaign archive; archive/retire only', 'Legacy Archive: Old Sheet 1 Campaigns'],
-  [2, 'current\\s+sheet\\s+2|provider\\s+intake', 'Provider intake', 'Sheet 1: Provider Intake'],
-  [3, 'current\\s+sheet\\s+3|advertiser\\s+intake', 'Advertiser intake', 'Sheet 2: Advertiser Intake'],
-  [4, 'current\\s+sheet\\s+4|provider\\s+display\\s+preferences?', 'Provider display preferences', 'Sheet 3: Provider Display Preferences'],
-  [5, 'current\\s+sheet\\s+5|provider\\s+campaigns?', 'Provider campaigns', 'Sheet 4: Provider Campaigns'],
-  [6, 'current\\s+sheet\\s+6|conference\\s+campaigns?', 'Conference campaigns', 'Sheet 5: Conference Campaigns'],
-  [7, 'current\\s+sheet\\s+7|patient\\s+campaigns?', 'Patient campaigns', 'Sheet 6: Patient Campaigns']
+  [1, 'current\\s+sheet\\s+1|old\\s+sheet\\s+1|legacy\\s+archive', 'Legacy campaign archive; archive/retire only'],
+  [2, 'current\\s+sheet\\s+2|advertiser\\s+intake|vendor\\s+intake|employer\\s+intake', 'Advertiser/vendor/employer intake'],
+  [3, 'current\\s+sheet\\s+3|provider\\s+display\\s+preferences?|provider\\s+preferences?|provider\\s+approvals?', 'Provider display preferences and approvals'],
+  [4, 'current\\s+sheet\\s+4|provider\\s+intake|medical\\s+venue\\s+intake', 'Provider and medical venue intake'],
+  [5, 'current\\s+sheet\\s+5|provider\\s+campaigns?|provider\\s+marketplace|provider\\s+directory', 'Provider marketplace and directory campaigns'],
+  [6, 'current\\s+sheet\\s+6|patient\\s+campaigns?|video\\s+campaigns?|patient\\s+screen', 'Video and patient screen campaigns'],
+  [7, 'current\\s+sheet\\s+7|conference\\s+campaigns?', 'Conference campaigns']
 ];
-const SHEETS = SHEET_DATA.map(([number, pattern, role, logical]) => ({
+const SHEETS = SHEET_DATA.map(([number, pattern, role]) => ({
   number,
   label: `Current Sheet ${number}`,
   pattern: new RegExp(`\\b(?:${pattern})\\b`, 'i'),
   role,
-  logical
+  logical: CURRENT_TO_FUTURE_SHEET_MAP.get(number)
 }));
 const SAFE_EXTENSIONS = new Set(TEXT_SNIFF_EXTENSIONS);
 const SAFE_ROUTE_WORDS = new Set('ad ads admin advertiser advertisers api app campaign campaigns cart center conference conferences contact employer employers form forms go intake legacy media old patient patients preview provider providers qr redirect redirects showcase signup submit upload vendor vendors'.split(' '));
