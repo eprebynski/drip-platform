@@ -347,6 +347,88 @@ function routeRows(sources) {
   return [...routes.values()].sort((a, b) => a.route.localeCompare(b.route)).slice(0, 60);
 }
 
+const RELATIONSHIP_CATEGORIES = [
+  ['Live mode usage', /\blive\s+mode\s+usage\b|\bmode\s*=|\bdoGet\b|\bdoPost\b/i, '(?:VERIFIED|CONFIRMED|NONE)', 'Live mode usage, active mode names, production callers, owner, and rollback remain UNKNOWN.'],
+  ['Active handlers', /\bactive\s+apps?\s+script\s+handlers?\b|\bdoGet\b|\bdoPost\b|\bhandler\b|\bfunction\b/i, '(?:VERIFIED|CONFIRMED|MAPPED)', 'Active handlers, linked workflows, production callers, owner, and rollback remain UNKNOWN.'],
+  ['Workflow-to-handler mapping', /\bworkflow-to-handler\b|\bhandler\s+mapping\b|\bmode\s*=|\bfunction\b/i, '(?:VERIFIED|CONFIRMED|MAPPED)', 'Workflow-to-handler mapping, production usage, owner, and rollback remain UNKNOWN.'],
+  ['Workflow-to-Sheet read/write behavior', /\bworkflow-to-sheet\b|\bread\/write\b|\bread\s+write\b|\bsheet\b.{0,80}\b(?:read|write|append|update)\b|\b(?:read|write|append|update)\b.{0,80}\bsheet\b/i, '(?:VERIFIED|CONFIRMED|MAPPED)', 'Workflow-to-Sheet read/write behavior, active tabs, owner, and rollback remain UNKNOWN.'],
+  ['Production caller map', /\bproduction\s+caller\b|\bpublic\s+caller\b|\broute\b|\bweb\s+app\b|\bcaller\s+map\b/i, '(?:VERIFIED|CONFIRMED|MAPPED)', 'Production caller map, traffic, owner, and rollback remain UNKNOWN.'],
+  ['Trigger map', /\btrigger\s+map\b|\btrigger\b|\bonFormSubmit\b|\bonEdit\b|\bonOpen\b|\btime-driven\b|\bclock\s+trigger\b/i, '(?:VERIFIED|CONFIRMED|MAPPED)', 'Trigger schedule, owner, linked handler, linked Sheet, and rollback remain UNKNOWN.'],
+  ['Cutover owner', /\bcutover\s+owner\b|\bmigration\s+owner\b|\bapproval\s+owner\b/i, '(?:VERIFIED|CONFIRMED|ASSIGNED)', 'Cutover owner remains UNKNOWN.'],
+  ['Rollback path', /\brollback\s+path\b|\brollback\b|\brestore\b/i, '(?:VERIFIED|CONFIRMED|DOCUMENTED|YES)', 'Rollback path remains UNKNOWN.']
+];
+
+function relationshipSources(allSources, pattern) {
+  return allSources.filter((source) => pattern.test(source.text));
+}
+
+function evidenceOnlyLabel(count, noun = 'sanitized source signal') {
+  if (!count) return 'UNKNOWN';
+  return `EVIDENCE_SIGNAL_ONLY: ${count} ${noun}${count === 1 ? '' : 's'}`;
+}
+
+function relationshipCategoryRows(allSources, modes, triggers, routes) {
+  return RELATIONSHIP_CATEGORIES.map(([category, pattern, accepted, unknown]) => {
+    const related = relationshipSources(allSources, pattern);
+    const verified = knownStatus(allSources, category, accepted);
+    let evidenceFound = evidenceOnlyLabel(related.length);
+    if (category === 'Active handlers' && modes.length) evidenceFound = `PARTIAL_SANITIZED_EVIDENCE: ${modes.length} mode/handler candidate(s)`;
+    if (category === 'Trigger map' && triggers.length) evidenceFound = `PARTIAL_SANITIZED_EVIDENCE: ${triggers.length} trigger candidate(s)`;
+    if (category === 'Production caller map' && routes.length) evidenceFound = `PARTIAL_SANITIZED_EVIDENCE: ${routes.length} route/caller candidate(s)`;
+    return {
+      category,
+      evidenceFound,
+      confidence: verified ? 'MEDIUM' : confidence(related),
+      stillUnknown: verified ? 'Production proof and migration approval still require manual Drip/ChatGPT review.' : unknown,
+      phaseImpact: verified ? 'MAYBE_AFTER_REVIEW' : 'EXCLUDE_FROM_PHASE_3_DRY_RUN'
+    };
+  });
+}
+
+function candidatesForWorkflow(workflow, items, formatter) {
+  const candidates = items.filter((item) => workflow.pattern.test(formatter(item)) || inferWorkflow(formatter(item)) === workflow.name);
+  return candidates.slice(0, 3);
+}
+
+function sourceCountForWorkflow(sources, workflow, pattern) {
+  return matches(sources, workflow.pattern).filter((source) => (
+    pattern.test(source.text)
+    && !/\b(?:workflow-to-sheet\s+)?read\/write\s+behavior\s+remains\s+UNKNOWN\b/i.test(source.text)
+  )).length;
+}
+
+function workflowRelationshipRows(sources, workflows, modes, triggers, routes, allSources) {
+  const ownerKnown = knownStatus(allSources, 'Cutover owner', '(?:VERIFIED|CONFIRMED|ASSIGNED)');
+  const rollbackKnown = knownStatus(allSources, 'Rollback path', '(?:VERIFIED|CONFIRMED|DOCUMENTED|YES)');
+  return workflows.map((workflow) => {
+    const handlerCandidates = candidatesForWorkflow(workflow, modes, ([candidate, , possibleWorkflow]) => `${candidate} ${possibleWorkflow}`);
+    const routeCandidates = candidatesForWorkflow(workflow, routes, (item) => `${item.route} ${inferWorkflow(item.route)}`);
+    const triggerCandidates = candidatesForWorkflow(workflow, triggers, ([candidate, , possibleWorkflow]) => `${candidate} ${possibleWorkflow}`);
+    const readWriteCount = sourceCountForWorkflow(
+      sources,
+      workflow,
+      /\bread\/write\b|\bread\s+write\b|\bsheet\b.{0,80}\b(?:read|write|append|update)\b|\b(?:read|write|append|update)\b.{0,80}\bsheet\b/i
+    );
+    const missing = [];
+    if (!handlerCandidates.length) missing.push('handler');
+    if (!routeCandidates.length) missing.push('caller');
+    if (!readWriteCount) missing.push('read/write behavior');
+    if (!ownerKnown) missing.push('cutover owner');
+    if (!rollbackKnown) missing.push('rollback path');
+    return {
+      workflow,
+      appsScriptSignal: workflow.signal === 'UNKNOWN' ? 'UNKNOWN' : 'EVIDENCE_SIGNAL_ONLY',
+      handlerCandidate: handlerCandidates.length ? `POSSIBLE: ${handlerCandidates.map(([candidate]) => candidate).join(', ')}` : 'UNKNOWN',
+      routeCandidate: routeCandidates.length ? `POSSIBLE: ${routeCandidates.map((item) => item.route).join(', ')}` : 'UNKNOWN',
+      sheetCandidate: workflow.linkedSheet === 'UNKNOWN' ? 'UNKNOWN' : `POSSIBLE: ${workflow.linkedSheet}`,
+      readWriteEvidence: readWriteCount ? evidenceOnlyLabel(readWriteCount) : 'UNKNOWN',
+      triggerEvidence: triggerCandidates.length ? `POSSIBLE: ${triggerCandidates.map(([candidate]) => candidate).join(', ')}` : 'UNKNOWN',
+      dryRunExclusionStatus: missing.length ? 'EXCLUDE_FROM_PHASE_3_DRY_RUN' : 'MAYBE_AFTER_REVIEW',
+      stillUnknown: missing.length ? missing.join(', ') : 'Production proof and explicit Drip/ChatGPT approval'
+    };
+  });
+}
+
 function knownStatus(sources, label, accepted) {
   const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   return sources.some((source) => new RegExp(`${escaped}.{0,100}${accepted}`, 'i').test(source.text));
@@ -380,7 +462,13 @@ function buildReport(allSources) {
   const modes = modeRows(sources);
   const triggers = triggerRows(sources);
   const routes = routeRows(sources);
+  const relationshipCategories = relationshipCategoryRows(allSources, modes, triggers, routes);
   const [gate, blockers] = assessGate(allSources, workflows, sheets, modes, routes);
+  const workflowRelationships = workflowRelationshipRows(sources, workflows, modes, triggers, routes, allSources);
+  const excludedWorkflows = workflowRelationships.filter((item) => item.dryRunExclusionStatus === 'EXCLUDE_FROM_PHASE_3_DRY_RUN');
+  const possibleDryRunCandidates = workflowRelationships.filter((item) => item.dryRunExclusionStatus === 'MAYBE_AFTER_REVIEW');
+  const cutoverOwner = relationshipCategories.find((item) => item.category === 'Cutover owner');
+  const rollbackPath = relationshipCategories.find((item) => item.category === 'Rollback path');
   const sourceTypes = [...new Set(allSources.map((source) => source.type))].sort();
   const signaled = workflows.filter((workflow) => workflow.signal !== 'UNKNOWN');
   const confidenceLevel = !sources.length || !signaled.length ? 'LOW' : new Set(sources.map((source) => source.type)).size >= 2 ? 'MEDIUM' : 'LOW';
@@ -391,6 +479,10 @@ function buildReport(allSources) {
   const modeTable = tableRows(modes, ([candidate, type, workflow]) => `| ${escapeMarkdown(candidate)} | ${type} | ${escapeMarkdown(workflow)} | UNKNOWN | LOW | ${type === 'FUNCTION_CANDIDATE' ? 'UNKNOWN' : 'REBUILD_IN_CLOUD_RUN'} | Live usage, handler, linked Sheet, owner, and rollback remain UNKNOWN. |`, 7);
   const triggerTable = tableRows(triggers, ([candidate, event, workflow, itemConfidence, disposition]) => `| ${escapeMarkdown(candidate)} | ${escapeMarkdown(event)} | ${escapeMarkdown(workflow)} | ${itemConfidence} | ${disposition} | Active schedule, function, owner, and linked Sheet remain UNKNOWN. |`, 6);
   const routeTable = tableRows(routes, (item) => `| ${escapeMarkdown(item.route)} | ${item.appsScript ? 'POSSIBLE - sanitized source also contains Apps Script signals' : 'UNKNOWN'} | ${escapeMarkdown(inferWorkflow(item.route))} | ${escapeMarkdown(replacementForRoute(item.route))} | ${/campaign|qr|conference|billing|submit|form|intake|signup/i.test(item.route) ? 'HIGH' : 'MEDIUM'} | ${item.types.size >= 2 ? 'MEDIUM' : 'LOW'} | Live caller, handler, traffic, owner, and rollback remain UNKNOWN. |`, 7);
+  const relationshipSummaryTable = relationshipCategories.map((item) => `| ${escapeMarkdown(item.category)} | ${escapeMarkdown(item.evidenceFound)} | ${item.confidence} | ${escapeMarkdown(item.stillUnknown)} | ${item.phaseImpact} |`).join('\n');
+  const workflowRelationshipTable = workflowRelationships.map((item) => `| ${escapeMarkdown(item.workflow.name)} | ${item.appsScriptSignal} | ${escapeMarkdown(item.handlerCandidate)} | ${escapeMarkdown(item.routeCandidate)} | ${escapeMarkdown(item.sheetCandidate)} | ${escapeMarkdown(item.readWriteEvidence)} | ${escapeMarkdown(item.triggerEvidence)} | ${escapeMarkdown(item.workflow.target)} | ${item.workflow.disposition} | ${item.dryRunExclusionStatus} | ${escapeMarkdown(item.stillUnknown)} |`).join('\n');
+  const exclusionTable = tableRows(excludedWorkflows, (item) => `| ${escapeMarkdown(item.workflow.name)} | ${item.dryRunExclusionStatus} | ${escapeMarkdown(item.stillUnknown)} | Keep excluded unless sanitized evidence is reviewed and Drip/ChatGPT explicitly approves a future limited dry-run scope. |`, 4);
+  const dryRunCandidateTable = tableRows(possibleDryRunCandidates, (item) => `| ${escapeMarkdown(item.workflow.name)} | ${item.dryRunExclusionStatus} | Production writes remain unauthorized; manual review is still required. |`, 3);
 
   return [gate, `# Apps Script Dependency Auto-Review Report
 
@@ -427,6 +519,47 @@ This report uses local sanitized evidence only and does not query or verify a li
 - Live production proof: NO
 
 Promoted values describe current sanitized review evidence only. They do not prove Apps Script handlers, live callers, production runtime behavior, owners, read/write behavior, rollback, cutover readiness, or migration approval.
+
+## Apps Script Relationship Evidence Summary
+
+| Relationship category | Sanitized evidence found | Confidence | Still UNKNOWN | Phase 3 impact |
+| --- | --- | --- | --- | --- |
+${relationshipSummaryTable}
+
+Relationship evidence is organized for review only. PARTIAL_SANITIZED_EVIDENCE, POSSIBLE, and EVIDENCE_SIGNAL_ONLY are not production proof and do not authorize migration, production writes, or Phase 3.
+
+## Workflow Relationship Matrix
+
+| Workflow | Apps Script signal | Mode/handler candidate | Public caller/route candidate | Current Sheet candidate | Read/write evidence | Trigger evidence | Future replacement target | Migration disposition | Dry-run exclusion status | Still UNKNOWN |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+${workflowRelationshipTable}
+
+Dry-run exclusion status is conservative. A workflow remains EXCLUDE_FROM_PHASE_3_DRY_RUN whenever handler, caller, read/write behavior, cutover owner, or rollback path is UNKNOWN.
+
+## Phase 3 Exclusion Draft
+
+| Workflow | Exclusion status | Reason | Review note |
+| --- | --- | --- | --- |
+${exclusionTable}
+
+Potential future limited dry-run planning candidates, if any, still require explicit Drip/ChatGPT review:
+
+| Workflow | Candidate status | Review note |
+| --- | --- | --- |
+${dryRunCandidateTable}
+
+This draft does not start Phase 3. It only identifies workflows that must remain out of scope unless future sanitized evidence and approvals change the gate.
+
+## Cutover And Rollback Gaps
+
+- Cutover owner status: ${escapeMarkdown(cutoverOwner?.evidenceFound || 'UNKNOWN')}
+- Cutover owner still UNKNOWN: ${escapeMarkdown(cutoverOwner?.stillUnknown || 'Cutover owner remains UNKNOWN.')}
+- Rollback path status: ${escapeMarkdown(rollbackPath?.evidenceFound || 'UNKNOWN')}
+- Rollback path still UNKNOWN: ${escapeMarkdown(rollbackPath?.stillUnknown || 'Rollback path remains UNKNOWN.')}
+- Owner evidence found: ${escapeMarkdown(cutoverOwner?.evidenceFound || 'UNKNOWN')}
+- Evidence required before migration/cutover: assigned cutover owner, documented rollback path, verified active handlers, verified workflow-to-handler mapping, verified workflow-to-Sheet read/write behavior, verified production caller map, and explicit Drip/ChatGPT approval.
+
+Cutover owner and rollback path remain hard blockers because a migration cannot be safely reviewed, paused, reversed, or assigned without them.
 
 ## Apps Script Dependency Inventory
 
