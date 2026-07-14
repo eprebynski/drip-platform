@@ -1,8 +1,8 @@
-# Phase 2.24 Phase 3 Readiness Tracker
+# Phase 2.24 / 2.36 Phase 3 Readiness Tracker
 
 ## Scope
 
-Phase 2.24 adds a local-only rollup generator for the Apps Script workflow manual reviews.
+Phase 2.24 added a local-only rollup generator for the Apps Script workflow manual reviews. Phase 2.36 expands that generator from the first five manual reviews to all 16 completed manual relationship reviews.
 
 - Production impact: NONE
 - Phase 3 started: NO
@@ -15,7 +15,7 @@ Phase 2.24 adds a local-only rollup generator for the Apps Script workflow manua
 
 ## Why A Rollup Tracker Is Needed
 
-The Phase 2.19 through Phase 2.23 manual review files each capture one workflow. A consolidated tracker gives Drip and ChatGPT one place to see which reviews are complete, which decisions moved from `UNKNOWN` to `PARTIAL_DEPENDENCY_CONFIRMED`, and which blockers still prevent Phase 3.
+The Phase 2.19 through Phase 2.35 manual review files each capture one workflow. A consolidated tracker gives Drip and ChatGPT one place to see which reviews are complete, which decisions moved from `UNKNOWN` to `PARTIAL_DEPENDENCY_CONFIRMED`, and which blockers still prevent Phase 3.
 
 The tracker is a planning aid only. It does not approve production work, dry runs, migrations, or live writes.
 
@@ -28,6 +28,17 @@ The command reads these local/private manual review files when present and uses 
 - `~/Documents/Drip/private-evidence/apps-script/provider-campaigns-manual-review.md`
 - `~/Documents/Drip/private-evidence/apps-script/screencloud-display-provider-operations-manual-review.md`
 - `~/Documents/Drip/private-evidence/apps-script/provider-display-preferences-manual-review.md`
+- `~/Documents/Drip/private-evidence/apps-script/admin-review-workflows-manual-review.md`
+- `~/Documents/Drip/private-evidence/apps-script/stripe-invoicing-manual-review.md`
+- `~/Documents/Drip/private-evidence/apps-script/video-playback-billing-manual-review.md`
+- `~/Documents/Drip/private-evidence/apps-script/patient-campaign-qr-scan-logging-manual-review.md`
+- `~/Documents/Drip/private-evidence/apps-script/provider-revenue-share-manual-review.md`
+- `~/Documents/Drip/private-evidence/apps-script/youtube-playlist-operations-manual-review.md`
+- `~/Documents/Drip/private-evidence/apps-script/provider-signup-manual-review.md`
+- `~/Documents/Drip/private-evidence/apps-script/advertiser-vendor-employer-signup-manual-review.md`
+- `~/Documents/Drip/private-evidence/apps-script/qr-redirects-manual-review.md`
+- `~/Documents/Drip/private-evidence/apps-script/market-intelligence-uploads-manual-review.md`
+- `~/Documents/Drip/private-evidence/apps-script/welcome-emails-manual-review.md`
 
 The generated evidence boundary also reports whether these supporting local/private artifacts exist:
 
@@ -37,7 +48,7 @@ The generated evidence boundary also reports whether these supporting local/priv
 
 Supporting artifacts are context only. They do not override the manual review decisions.
 
-If a manual review file is missing, that workflow is marked `NOT_REVIEWED`.
+If a manual review file is missing, that workflow is marked `NOT_REVIEWED`. Missing files do not fail the command and remain excluded from Phase 3 dry-run scope.
 
 ## Command
 
@@ -59,7 +70,7 @@ The generated tracker remains local/private and must not be committed.
 
 `UNKNOWN` means the review did not find sanitized evidence strong enough to support a decision. It remains a blocker.
 
-`PARTIAL_DEPENDENCY_CONFIRMED` means sanitized evidence shows a conservative relationship signal, route/context signal, or dependency signal. It is not production proof and does not authorize Phase 3.
+`PARTIAL_DEPENDENCY_CONFIRMED` means sanitized evidence shows a conservative relationship signal, route/context signal, planning signal, or dependency signal. It is not production proof and does not authorize Phase 3.
 
 The tracker preserves the overall gate recommendation `PHASE_3_BLOCKED` and dry-run status `NOT_APPROVED`.
 
@@ -78,6 +89,8 @@ Phase 3 remains blocked because the reviewed workflows still have unresolved har
 - exact production dependency details unknown where applicable
 - whether data should enter Phase 3 dataset ingestion unknown
 
+All 16 manual reviews can be present and summarized while Phase 3 remains blocked. Manual review completion means the available sanitized evidence has been organized; it does not mean production behavior is verified, owners are assigned, rollback is tested, or dry-run scope is approved.
+
 ## Monitoring Progression
 
 The generated tracker includes a qualitative Phase 3 readiness score:
@@ -88,13 +101,29 @@ The generated tracker includes a qualitative Phase 3 readiness score:
 - `READY_FOR_LIMITED_DRY_RUN_REVIEW`
 - `READY_FOR_PHASE_3_APPROVAL_REVIEW`
 
-The expected current score is `BLOCKED_PROGRESSING` because the top-five manual reviews exist and some decisions moved to partial dependency status, but hard blockers still remain.
+The expected current score is `BLOCKED_PROGRESSING` because the 16 configured manual review files can now be summarized and some decisions moved to partial dependency status, but hard blockers still remain across every workflow.
+
+Do not promote the score to `MAYBE_AFTER_MANUAL_REVIEW`, `READY_FOR_LIMITED_DRY_RUN_REVIEW`, or `READY_FOR_PHASE_3_APPROVAL_REVIEW` until required evidence exists and Drip/ChatGPT explicitly approve a future limited dry-run scope.
 
 ## Admin Dashboard v0 Readiness
 
 The tracker also includes an Admin Dashboard v0 readiness table. This is for non-production planning only.
 
-The evidence/gate status panel may be ready for non-production design because the manual review and blocker fields are structured. Most operational dashboard areas remain `PLANNING_ONLY` or `BLOCKED_BY_UNKNOWN_DEPENDENCIES` until handler, caller, Sheet, owner, rollback, and dependency mappings are reviewed.
+Admin Dashboard production readiness remains `NOT PRODUCTION READY`.
+
+The evidence/gate status panel, issue tracker, and manual review matrix / dependency matrix may be ready for non-production design because the manual review and blocker fields are structured. Operational areas such as campaign admin, display provider status, billing/revenue-share review, signup/user/org lookup, QR/redirect monitoring, market intelligence upload monitoring, welcome email monitoring, and YouTube/playlist status remain `PLANNING_ONLY` or `BLOCKED_BY_UNKNOWN_DEPENDENCIES` until handler, caller, Sheet, owner, rollback, and dependency mappings are reviewed.
+
+## Recommended Next Phase 2 Action
+
+Because the baseline manual review set is now complete locally, the next action is no longer simply continuing manual reviews. The tracker should direct Drip toward a Phase 3 blocker-resolution plan across all 16 workflows:
+
+1. Create a Phase 3 blocker-resolution plan across all 16 workflows.
+2. Assign proposed owners for handler, caller, Sheet read/write, trigger, rollback, and ingestion decisions.
+3. Identify which workflows could be eligible for non-production design only.
+4. Do not approve Phase 3 or a limited dry run until blockers are resolved and Drip/ChatGPT explicitly approve scope.
+5. Consider an internal Admin Dashboard evidence/gate panel only as non-production design.
+
+Manual reviews should be revisited only if new sanitized evidence appears.
 
 ## Local And Private Only
 
