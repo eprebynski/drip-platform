@@ -44,21 +44,68 @@ const WORKFLOW_REVIEWS = [
     workflow: 'Provider display preferences',
     file: 'provider-display-preferences-manual-review.md',
     dependencyField: 'Reviewer decision for display eligibility dependency'
+  },
+  {
+    workflow: 'Admin review workflows',
+    file: 'admin-review-workflows-manual-review.md',
+    dependencyField: 'Reviewer decision for admin/safety/status dependency'
+  },
+  {
+    workflow: 'Stripe invoicing',
+    file: 'stripe-invoicing-manual-review.md',
+    dependencyField: 'Reviewer decision for Stripe invoice dependency'
+  },
+  {
+    workflow: 'Video/playback billing',
+    file: 'video-playback-billing-manual-review.md',
+    dependencyField: 'Reviewer decision for playback metric dependency'
+  },
+  {
+    workflow: 'Patient Campaign QR scan logging',
+    file: 'patient-campaign-qr-scan-logging-manual-review.md',
+    dependencyField: 'Reviewer decision for QR scan/click event dependency'
+  },
+  {
+    workflow: 'Provider revenue share',
+    file: 'provider-revenue-share-manual-review.md',
+    dependencyField: 'Reviewer decision for revenue share calculation'
+  },
+  {
+    workflow: 'YouTube/playlist operations',
+    file: 'youtube-playlist-operations-manual-review.md',
+    dependencyField: 'Reviewer decision for YouTube video URL dependency'
+  },
+  {
+    workflow: 'Provider signup',
+    file: 'provider-signup-manual-review.md',
+    dependencyField: 'Reviewer decision for provider organization/facility/user dependency'
+  },
+  {
+    workflow: 'Advertiser/vendor/employer signup',
+    file: 'advertiser-vendor-employer-signup-manual-review.md',
+    dependencyField: 'Reviewer decision for business/organization/user dependency'
+  },
+  {
+    workflow: 'QR redirects',
+    file: 'qr-redirects-manual-review.md',
+    dependencyField: 'Reviewer decision for redirect target dependency'
+  },
+  {
+    workflow: 'Market intelligence uploads',
+    file: 'market-intelligence-uploads-manual-review.md',
+    dependencyField: 'Reviewer decision for market intelligence import dependency'
+  },
+  {
+    workflow: 'Welcome emails',
+    file: 'welcome-emails-manual-review.md',
+    dependencyField: 'Reviewer decision for provider welcome email dependency'
   }
 ];
 
-const NEXT_MANUAL_REVIEWS = [
-  'Admin review workflows',
-  'Stripe invoicing',
-  'Video/playback billing',
-  'Patient Campaign QR scan logging',
-  'Provider revenue share',
-  'YouTube/playlist operations',
-  'Provider signup',
-  'Advertiser/vendor/employer signup',
-  'QR redirects',
-  'Market intelligence uploads',
-  'Welcome emails'
+const OPTIONAL_REVIEW_RECOMMENDATIONS = [
+  'Re-review individual workflow decisions only if new sanitized evidence appears.',
+  'Refresh manual review files after Drip/ChatGPT provides verified owner, caller, trigger, Sheet, rollback, or ingestion evidence.',
+  'Keep any future MAYBE_AFTER_REVIEW scope dry-run-only and explicitly approved before implementation.'
 ];
 
 const SUPPORTING_FILES = [
@@ -103,10 +150,37 @@ const ADMIN_DASHBOARD_AREAS = [
   ['Provider Campaign admin', 'Provider Campaigns', 'BLOCKED_BY_UNKNOWN_DEPENDENCIES', 'Provider Campaigns-specific caller, handler, and read/write behavior remain UNKNOWN.'],
   ['Provider display preference review', 'Provider display preferences', 'PLANNING_ONLY', 'Display eligibility dependency is partial, but current behavior and ownership remain UNKNOWN.'],
   ['Screen/display provider status', 'ScreenCloud/display provider operations', 'PLANNING_ONLY', 'Display-provider dependency is partial, but exact production details and rollback remain UNKNOWN.'],
-  ['Billing/revenue-share review', 'Provider revenue share / Video/playback billing / Stripe invoicing', 'BLOCKED_BY_UNKNOWN_DEPENDENCIES', 'Billing and revenue-share workflows have not been manually reviewed.'],
+  ['Billing/revenue-share review', 'Provider revenue share / Video/playback billing / Stripe invoicing', 'BLOCKED_BY_UNKNOWN_DEPENDENCIES', 'Billing and revenue-share workflows have partial planning signals, but production behavior remains UNKNOWN.'],
+  ['Signup/user/org lookup', 'Provider signup / Advertiser/vendor/employer signup', 'BLOCKED_BY_UNKNOWN_DEPENDENCIES', 'Signup and organization workflows have partial intake signals, but production user/org creation remains UNKNOWN.'],
+  ['QR/redirect monitoring', 'QR redirects / Patient Campaign QR scan logging', 'BLOCKED_BY_UNKNOWN_DEPENDENCIES', 'Route and QR signals exist, but target maps, logging behavior, and rollback remain UNKNOWN.'],
+  ['Market intelligence upload monitoring', 'Market intelligence uploads', 'BLOCKED_BY_UNKNOWN_DEPENDENCIES', 'Upload/import behavior, storage, Sheet writes, and owner remain UNKNOWN.'],
+  ['Welcome email/notification monitoring', 'Welcome emails', 'BLOCKED_BY_UNKNOWN_DEPENDENCIES', 'Notification service is planning-only; sender, trigger, template, and sent-status behavior remain UNKNOWN.'],
+  ['YouTube/playlist status', 'YouTube/playlist operations', 'BLOCKED_BY_UNKNOWN_DEPENDENCIES', 'Playlist/video URL evidence is partial planning context; live playlist behavior remains UNKNOWN.'],
   ['Issue tracker', 'All reviewed workflows', 'READY_FOR_NON_PRODUCTION_DESIGN', 'Reviewed workflows have clear blocker lists that can feed an internal issue tracker.'],
   ['Evidence/gate status panel', 'Manual review rollup', 'READY_FOR_NON_PRODUCTION_DESIGN', 'Evidence and gate fields are available for local-only dashboard design.'],
-  ['User/org lookup', 'Provider signup / Advertiser/vendor/employer signup', 'BLOCKED_BY_UNKNOWN_DEPENDENCIES', 'Signup and organization workflows have not been manually reviewed.']
+  ['Manual review matrix / dependency matrix', 'All 16 manual reviews', 'READY_FOR_NON_PRODUCTION_DESIGN', 'All workflow reviews can be shown in a local-only dependency matrix without production operations.']
+];
+
+const CALLER_DECISION_FIELDS = [
+  'Reviewer decision for caller',
+  'Reviewer decision for caller/trigger',
+  'Reviewer decision for caller/trigger/job',
+  'Reviewer decision for caller/trigger/job/payment',
+  'Reviewer decision for caller/trigger/job/sync',
+  'Reviewer decision for caller/form/trigger/job',
+  'Reviewer decision for caller/route/trigger'
+];
+
+const TRIGGER_DECISION_FIELDS = [
+  'Reviewer decision for trigger',
+  'Reviewer decision for trigger/job',
+  'Reviewer decision for trigger/job/payment',
+  'Reviewer decision for trigger/job/playlist sync',
+  'Reviewer decision for trigger/route/logging behavior',
+  'Reviewer decision for trigger/route/redirect behavior',
+  'Reviewer decision for trigger/form/onboarding behavior',
+  'Reviewer decision for trigger/upload/import behavior',
+  'Reviewer decision for trigger/email job behavior'
 ];
 
 function displayedRoot(privateRoot) {
@@ -154,6 +228,14 @@ function parseFieldTable(text, heading) {
     }
   }
   return fields;
+}
+
+function firstDecisionValue(fields, names, fallback = 'UNKNOWN') {
+  for (const name of names) {
+    const value = fields.get(name);
+    if (value) return value;
+  }
+  return fallback;
 }
 
 function extractSection(text, heading) {
@@ -205,9 +287,9 @@ function reviewFromFile(privateRoot, config) {
     relativePath,
     manualStatus: boundary.get('Manual review complete') || 'UNKNOWN',
     handlerDecision: decisions.get('Reviewer decision for handler') || 'UNKNOWN',
-    callerDecision: decisions.get('Reviewer decision for caller') || 'UNKNOWN',
+    callerDecision: firstDecisionValue(decisions, CALLER_DECISION_FIELDS),
     readWriteDecision: decisions.get('Reviewer decision for read/write') || 'UNKNOWN',
-    triggerDecision: decisions.get('Reviewer decision for trigger') || 'UNKNOWN',
+    triggerDecision: firstDecisionValue(decisions, TRIGGER_DECISION_FIELDS),
     dependencyDecision: config.dependencyField ? decisions.get(config.dependencyField) || 'UNKNOWN' : 'N/A',
     cutoverOwnerDecision: decisions.get('Reviewer decision for cutover owner') || 'UNKNOWN',
     rollbackPathDecision: decisions.get('Reviewer decision for rollback path') || 'UNKNOWN',
@@ -271,7 +353,15 @@ function supportFilesSummary(privateRoot) {
 
 function partialDecisionSummary(reviews) {
   return reviews
-    .filter((review) => [review.callerDecision, review.dependencyDecision].includes('PARTIAL_DEPENDENCY_CONFIRMED'))
+    .filter((review) => [
+      review.handlerDecision,
+      review.callerDecision,
+      review.readWriteDecision,
+      review.triggerDecision,
+      review.dependencyDecision,
+      review.cutoverOwnerDecision,
+      review.rollbackPathDecision
+    ].includes('PARTIAL_DEPENDENCY_CONFIRMED'))
     .map((review) => review.workflow)
     .join(', ') || 'NONE';
 }
@@ -289,6 +379,7 @@ function buildTracker(privateRoot, reviews) {
 | Generated at | ${new Date().toISOString()} |
 | Private evidence root | ${escapeMarkdown(displayedRoot(privateRoot))} |
 | Manual review files found | ${foundCount} of ${reviews.length} |
+| Reviewed workflows summarized | ${reviews.length} |
 | Manual review file status | ${escapeMarkdown(filesFoundSummary(reviews))} |
 | Supporting evidence file status | ${escapeMarkdown(supportFilesSummary(privateRoot))} |
 | Production impact | NONE |
@@ -297,7 +388,7 @@ function buildTracker(privateRoot, reviews) {
 | Raw private evidence committed | NO |
 | Tracker confidence | MEDIUM for rollup status; LOW for readiness because hard blockers remain UNKNOWN |
 
-This tracker reads local/private files only. Workflow decisions come from the five manual review files; supporting files are reported for evidence-boundary context only. It does not query or modify live systems.
+This tracker reads local/private files only. Workflow decisions come from the configured manual review files; supporting files are reported for evidence-boundary context only. It does not query or modify live systems. Missing manual review files are marked NOT_REVIEWED and remain excluded from Phase 3 dry-run scope.
 
 ## Executive Summary
 
@@ -307,10 +398,10 @@ This tracker reads local/private files only. Workflow decisions come from the fi
 | Phase 3 dry-run status | NOT_APPROVED |
 | Production writes authorized | NO |
 | Live migration authorized | NO |
-| Admin dashboard v0 readiness | Planning/evidence stage only |
+| Admin dashboard v0 production readiness | NOT PRODUCTION READY |
 | Phase 3 readiness score | BLOCKED_PROGRESSING |
 | Partial dependency movement | ${escapeMarkdown(partialDecisionSummary(reviews))} |
-| Recommended next action | Continue manual workflow reviews and assign owners/rollback paths before any Phase 3 dry-run review. |
+| Recommended next action | Refresh tracker after all 16 manual reviews, then create a Phase 3 blocker-resolution plan before considering any limited dry-run scope. |
 
 ## Workflow Review Rollup
 
@@ -328,11 +419,13 @@ ${blockers.map((blocker) => `- ${escapeMarkdown(blocker)}`).join('\n')}
 | --- | --- |
 | Score | BLOCKED_PROGRESSING |
 | Allowed score values | BLOCKED_EARLY; BLOCKED_PROGRESSING; MAYBE_AFTER_MANUAL_REVIEW; READY_FOR_LIMITED_DRY_RUN_REVIEW; READY_FOR_PHASE_3_APPROVAL_REVIEW |
-| Rationale | Several manual reviews are complete and some caller/dependency decisions moved to PARTIAL_DEPENDENCY_CONFIRMED, but handler, caller proof, read/write behavior, trigger, owner, rollback, and data-ingestion decisions remain unresolved. |
+| Rationale | All configured manual review files may be present locally and many dependency decisions moved to PARTIAL_DEPENDENCY_CONFIRMED, but every workflow still has unresolved handler, caller proof, read/write behavior, trigger, owner, rollback, exact production behavior, and data-ingestion decisions. |
 
 ## Admin Dashboard v0 Readiness Tracker
 
-The admin dashboard is not production-ready. Internal v0 planning can proceed only as non-production design until required workflows are mapped and hard blockers are resolved.
+Production dashboard status: NOT PRODUCTION READY.
+
+The admin dashboard is not production-ready. Internal v0 planning can proceed only as non-production design until required workflows are mapped and hard blockers are resolved. Operational dashboard areas remain PLANNING_ONLY or BLOCKED_BY_UNKNOWN_DEPENDENCIES.
 
 | Admin dashboard area | Related workflow | Readiness | Reason |
 | --- | --- | --- | --- |
@@ -353,11 +446,17 @@ ${reviews.map((review) => `### ${escapeMarkdown(review.workflow)}
 - Explicit Drip/ChatGPT approval recorded.
 `).join('\n')}
 
-## Recommended Next Manual Reviews
+## Recommended Next Phase 2 Actions
 
-${NEXT_MANUAL_REVIEWS.map((workflow, index) => `${index + 1}. ${workflow}`).join('\n')}
+1. Create a Phase 3 blocker-resolution plan across all 16 workflows.
+2. Assign proposed owners for handler, caller, Sheet read/write, trigger, rollback, and ingestion decisions.
+3. Identify which workflows could be eligible for non-production design only.
+4. Do not approve Phase 3 or limited dry run until blockers are resolved and Drip/ChatGPT explicitly approve scope.
+5. Consider an internal Admin Dashboard evidence/gate panel only as non-production design.
 
-This ordering is conservative and may be adjusted if new sanitized evidence appears.
+## Optional Re-Review Triggers
+
+${OPTIONAL_REVIEW_RECOMMENDATIONS.map((recommendation, index) => `${index + 1}. ${recommendation}`).join('\n')}
 
 ## Do Not Do
 
@@ -385,7 +484,7 @@ try {
   fs.renameSync(temporaryPath, trackerPath);
   console.log(`Phase 3 readiness tracker written: ${trackerPath}`);
   console.log(`Manual review files found: ${reviews.filter((review) => review.found).length} of ${reviews.length}`);
-  console.log('Reviewed workflows summarized: 5');
+  console.log(`Reviewed workflows summarized: ${reviews.length}`);
   console.log('Phase 3 readiness score: BLOCKED_PROGRESSING');
   console.log('Overall gate recommendation: PHASE_3_BLOCKED');
   console.log('Phase 3 dry-run status: NOT_APPROVED');
