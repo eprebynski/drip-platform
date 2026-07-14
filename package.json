@@ -12,6 +12,7 @@
     "evidence:create-apps-script-template": "node ./scripts/generate-apps-script-dependency-template.js",
     "evidence:create-apps-script-relationship-verification-packet": "node ./scripts/generate-apps-script-relationship-verification-packet.js",
     "evidence:create-apps-script-workflow-review-guidance": "node ./scripts/generate-apps-script-workflow-review-guidance.js",
+    "evidence:create-phase-3-readiness-tracker": "node ./scripts/generate-phase-3-readiness-tracker.js",
     "evidence:review-apps-script-dependencies": "node ./scripts/review-apps-script-dependencies.js",
     "evidence:collect-public": "node ./scripts/collect-public-website-evidence.js",
     "evidence:collect-public:dry-run": "node ./scripts/collect-public-website-evidence.js --dry-run",

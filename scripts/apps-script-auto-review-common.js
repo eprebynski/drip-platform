@@ -15,6 +15,11 @@ export const APPS_SCRIPT_WORKFLOW_REVIEW_GUIDANCE_RELATIVE_PATH = path.join(
   'apps-script-workflow-review-guidance.md'
 );
 
+export const PHASE_3_READINESS_TRACKER_RELATIVE_PATH = path.join(
+  'apps-script',
+  'phase-3-readiness-tracker.md'
+);
+
 export const APPS_SCRIPT_GATE_RESULTS = new Set([
   'PHASE_3_BLOCKED',
   'PHASE_3_CAN_PROCEED_WITH_EXCLUSIONS',
