@@ -7,7 +7,8 @@
   "main": "./src/server.js",
   "scripts": {
     "start": "node ./src/server.js",
-    "test": "node --test"
+    "test": "node --test",
+    "validate:admin-v0-mock-fixtures": "node ./scripts/validate-admin-v0-mock-fixtures.mjs"
   },
   "engines": {
     "node": ">=18"
