@@ -2,6 +2,7 @@ import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
 import { extname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { renderAdminV0StaticShell } from "./admin-v0/static-shell.js";
 import { createDashboardStore } from "./dashboard-store.js";
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
@@ -21,6 +22,18 @@ export function createDashboardServer() {
 
       if (request.method === "GET" && url.pathname === "/api/dashboard") {
         return json(response, 200, store.getSnapshot());
+      }
+
+      if (
+        request.method === "GET" &&
+        (url.pathname === "/admin/v0" || url.pathname === "/admin/v0/")
+      ) {
+        response.writeHead(200, {
+          "Content-Type": "text/html; charset=utf-8",
+          "Cache-Control": "no-store"
+        });
+        response.end(renderAdminV0StaticShell());
+        return;
       }
 
       if (
